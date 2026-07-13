@@ -860,18 +860,43 @@ export default function App() {
 
       {page==="home" && (
         <>
-          <div style={{background:`linear-gradient(135deg,${C.navy} 0%,#1e5799 50%,${C.blue} 100%)`,padding:"48px 20px",textAlign:"center",color:"#fff"}}>
-            <p style={{fontSize:10,color:"#7eb8d4",marginBottom:14,letterSpacing:3,fontWeight:600}}>TOUR PRODUCT PLANNER</p>
-            <h1 style={{fontSize:38,fontWeight:700,margin:"0 0 16px",lineHeight:1.3,letterSpacing:-0.5}}>관광 상품 기획서를<br/>30초 만에 완성하세요</h1>
-            <p style={{fontSize:15,color:"rgba(255,255,255,0.7)",margin:"0 0 36px",lineHeight:1.7}}>기획서 · 일정표 · 견적서 · 카드뉴스 · 블로그 · 카카오까지<br/>한국관광공사 OpenAPI 기반으로 자동 생성</p>
+          {/* 히어로 */}
+          <div style={{background:`linear-gradient(135deg,${C.navy} 0%,#1a4f8a 50%,${C.blue} 100%)`,padding:"56px 20px 48px",textAlign:"center",color:"#fff"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.12)",borderRadius:20,padding:"5px 14px",marginBottom:20,border:"1px solid rgba(255,255,255,0.2)"}}>
+              <span style={{fontSize:10,color:"#7eb8d4",letterSpacing:2,fontWeight:600}}>한국관광공사 OpenAPI 기반</span>
+            </div>
+            <h1 style={{fontSize:36,fontWeight:700,margin:"0 0 16px",lineHeight:1.3,letterSpacing:-0.5}}>관광 상품 기획서를<br/>30초 만에 완성하세요</h1>
+            <p style={{fontSize:14,color:"rgba(255,255,255,0.72)",margin:"0 0 12px",lineHeight:1.7}}>여행사·지자체 실무자의 기획 업무를 AI로 자동화</p>
+            <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",margin:"0 0 36px"}}>기획서 · 일정표 · 견적서 · 카드뉴스 · 블로그 · 카카오 채널까지</p>
             <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-              <button onClick={()=>setPage("form")} style={btn({padding:"14px 36px",background:C.amber,color:"#fff",borderRadius:10,fontSize:16,fontWeight:700,boxShadow:"0 4px 16px rgba(232,160,32,0.4)"})}>기획 시작하기 →</button>
+              <button onClick={()=>setPage("form")} style={btn({padding:"14px 36px",background:C.amber,color:"#fff",borderRadius:10,fontSize:16,fontWeight:700,boxShadow:"0 4px 20px rgba(232,160,32,0.45)"})}>기획 시작하기 →</button>
               {history.length>0&&<button onClick={()=>setPage("history")} style={btn({padding:"14px 24px",background:"rgba(255,255,255,0.12)",color:"#fff",border:"1px solid rgba(255,255,255,0.25)",borderRadius:10,fontSize:14,backdropFilter:"blur(4px)"})}>저장된 기획서 {history.length}개</button>}
             </div>
           </div>
-          <div style={wrap}>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10,marginBottom:48}}>
-              {[["📋","기획서","AI 상품 기획"],["🗓","일정표","PDF 출력"],["💰","견적서","인원별 계산"],["🖼","카드뉴스","SNS 캐러셀"],["✍️","블로그","본문 자동 작성"],["💬","카카오","채널 메시지"]].map(([icon,title,desc])=>(
+
+          {/* 문제 정의 */}
+          <div style={{background:"#f8f6f2",padding:"40px 20px",textAlign:"center"}}>
+            <div style={{maxWidth:680,margin:"0 auto"}}>
+              <p style={{fontSize:11,color:C.amber,fontWeight:700,letterSpacing:2,marginBottom:12}}>PROBLEM</p>
+              <h2 style={{fontSize:20,fontWeight:700,color:C.navy,margin:"0 0 16px",lineHeight:1.5}}>전통적인 관광 상품 개발은<br/>프로세스가 파편화되어 있습니다</h2>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:24}}>
+                {[["⏱️","평균 2~3일","기획서 작성 시간"],["🔄","5개 이상","사용하는 별도 도구 수"],["📉","반복 수작업","데이터 조회→기획→마케팅"]].map(([icon,stat,desc])=>(
+                  <div key={stat} style={{background:C.white,borderRadius:12,padding:"20px 12px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+                    <div style={{fontSize:22,marginBottom:8}}>{icon}</div>
+                    <div style={{fontSize:15,fontWeight:700,color:C.red,marginBottom:4}}>{stat}</div>
+                    <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 해결책 - 생성 결과물 */}
+          <div style={{...wrap,paddingTop:40,paddingBottom:8}}>
+            <p style={{fontSize:11,color:C.blue,fontWeight:700,letterSpacing:2,marginBottom:8,textAlign:"center"}}>SOLUTION</p>
+            <h2 style={{fontSize:18,fontWeight:700,color:C.navy,margin:"0 0 24px",textAlign:"center"}}>조건 입력 하나로 6가지 산출물 자동 생성</h2>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:32}}>
+              {[["📋","기획서","상품 컨셉·일정·가격 포함"],["🗓","일정표","Day별 세부 일정 구성"],["💰","견적서","인원·옵션별 자동 계산"],["🖼","카드뉴스","SNS 캐러셀 카드 4장"],["✍️","블로그","SEO 최적화 본문"],["💬","카카오","채널 홍보 메시지"]].map(([icon,title,desc])=>(
                 <div key={title} style={{background:C.white,borderRadius:12,padding:"18px 12px",textAlign:"center",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
                   <div style={{fontSize:26,marginBottom:8}}>{icon}</div>
                   <div style={{fontSize:12,fontWeight:700,color:C.navy,marginBottom:4}}>{title}</div>
@@ -879,17 +904,84 @@ export default function App() {
                 </div>
               ))}
             </div>
-            {history.length>0&&(
-              <>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.navy}}>최근 기획서</div>
-                  <button onClick={()=>setPage("history")} style={btn({fontSize:12,color:C.blue,background:"none",padding:0})}>전체 보기 →</button>
+          </div>
+
+          {/* 사용 흐름 */}
+          <div style={{background:"#f0f7ff",padding:"32px 20px"}}>
+            <div style={{maxWidth:600,margin:"0 auto"}}>
+              <p style={{fontSize:11,color:C.blue,fontWeight:700,letterSpacing:2,marginBottom:8,textAlign:"center"}}>HOW IT WORKS</p>
+              <h2 style={{fontSize:18,fontWeight:700,color:C.navy,margin:"0 0 24px",textAlign:"center"}}>3단계로 끝나는 관광 기획</h2>
+              <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                {[["01","조건 입력","지역·기간·테마·타깃·예산 선택 (30초)"],["02","데이터 수집","한국관광공사 OpenAPI에서 실시간 관광지 조회"],["03","AI 자동 생성","Claude AI가 기획서·마케팅 카피 일괄 생성"]].map(([num,title,desc],i)=>(
+                  <div key={num} style={{display:"flex",gap:16,alignItems:"flex-start",paddingBottom:i<2?20:0}}>
+                    <div style={{flexShrink:0,width:36,height:36,borderRadius:"50%",background:C.navy,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700}}>{num}</div>
+                    <div style={{flex:1,paddingTop:6}}>
+                      <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:3}}>{title}</div>
+                      <div style={{fontSize:12,color:C.muted,lineHeight:1.6}}>{desc}</div>
+                      {i<2&&<div style={{width:1,height:16,background:"#b3d4f5",marginLeft:18,marginTop:12}}/>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 데이터 출처 */}
+          <div style={{background:C.white,padding:"28px 20px",borderTop:"1px solid #eee",borderBottom:"1px solid #eee"}}>
+            <div style={{maxWidth:600,margin:"0 auto",display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",justifyContent:"center"}}>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:10,color:C.muted,letterSpacing:1,marginBottom:6}}>DATA SOURCE</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{background:"#1a5fa8",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:12}}>한국관광공사</span>
+                  <span style={{fontSize:12,color:C.text}}>국문 관광정보 서비스 (KorService2)</span>
                 </div>
-                <div style={{display:"grid",gap:10}}>
-                  {history.slice(0,3).map(h=><PlanCard key={h.id} plan={h} onClick={()=>{setDetailItem(h);setPage("detail");}} onDelete={deleteItem}/>)}
+              </div>
+              <div style={{width:1,height:32,background:"#ddd",display:"none"}}/>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:10,color:C.muted,letterSpacing:1,marginBottom:6}}>AI ENGINE</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{background:"#7c3aed",color:"#fff",fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:12}}>Claude AI</span>
+                  <span style={{fontSize:12,color:C.text}}>claude-sonnet-4-6</span>
                 </div>
-              </>
-            )}
+              </div>
+            </div>
+          </div>
+
+          {/* 발전 가능성 */}
+          <div style={{background:"#f8f6f2",padding:"32px 20px"}}>
+            <div style={{maxWidth:600,margin:"0 auto"}}>
+              <p style={{fontSize:11,color:C.amber,fontWeight:700,letterSpacing:2,marginBottom:8,textAlign:"center"}}>ROADMAP</p>
+              <h2 style={{fontSize:16,fontWeight:700,color:C.navy,margin:"0 0 16px",textAlign:"center"}}>향후 발전 방향</h2>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                {[["🌐","다국어 지원","외국인 관광객 대상 기획 자동화"],["📊","수요 분석","관광 트렌드·방문객 통계 연동"],["🤝","예약 연동","숙박·교통 실시간 예약 API 통합"],["📱","앱 전환","여행사 전용 모바일 앱 고도화"]].map(([icon,title,desc])=>(
+                  <div key={title} style={{background:C.white,borderRadius:10,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
+                    <div style={{fontSize:20,marginBottom:6}}>{icon}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.navy,marginBottom:3}}>{title}</div>
+                    <div style={{fontSize:11,color:C.muted,lineHeight:1.5}}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 최근 기획서 */}
+          {history.length>0&&(
+            <div style={wrap}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.navy}}>최근 기획서</div>
+                <button onClick={()=>setPage("history")} style={btn({fontSize:12,color:C.blue,background:"none",padding:0})}>전체 보기 →</button>
+              </div>
+              <div style={{display:"grid",gap:10}}>
+                {history.slice(0,3).map(h=><PlanCard key={h.id} plan={h} onClick={()=>{setDetailItem(h);setPage("detail");}} onDelete={deleteItem}/>)}
+              </div>
+            </div>
+          )}
+
+          {/* 하단 CTA */}
+          <div style={{background:`linear-gradient(135deg,${C.navy},${C.blue})`,padding:"40px 20px",textAlign:"center",color:"#fff"}}>
+            <h2 style={{fontSize:20,fontWeight:700,margin:"0 0 12px"}}>지금 바로 시작해보세요</h2>
+            <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",margin:"0 0 24px"}}>회원가입 없이 무료로 사용 가능</p>
+            <button onClick={()=>setPage("form")} style={btn({padding:"14px 40px",background:C.amber,color:"#fff",borderRadius:10,fontSize:15,fontWeight:700,boxShadow:"0 4px 16px rgba(0,0,0,0.2)"})}>기획 시작하기 →</button>
           </div>
         </>
       )}
