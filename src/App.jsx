@@ -681,7 +681,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             </div>
             {plan.ktoSpots && plan.ktoSpots.length > 0 ? (
               <>
-                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>areaBasedList1 · 총 {plan.ktoSpots.length}개 관광지 조회</div>
+                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>areaBasedList2 · 총 {plan.ktoSpots.length}개 관광지 조회</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {plan.ktoSpots.slice(0,12).map((s,i)=>(
                     <span key={i} style={{fontSize:11,background:"#fff",border:"1px solid #b3d4f5",borderRadius:6,padding:"3px 9px",color:"#1a5fa8"}}>{s.title}</span>
