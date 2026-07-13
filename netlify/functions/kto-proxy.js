@@ -1,14 +1,13 @@
 // KTO (한국관광공사) OpenAPI 프록시
 // CORS 문제를 해결하기 위해 서버사이드에서 API 호출
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 
-  // OPTIONS (preflight) 처리
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
   }
@@ -26,7 +25,6 @@ export const handler = async (event) => {
       };
     }
 
-    // 서비스키는 URL 인코딩된 상태로 저장되어 있으므로 디코딩 후 사용
     const decodedKey = decodeURIComponent(apiKey);
 
     const params = new URLSearchParams({
@@ -48,10 +46,7 @@ export const handler = async (event) => {
     }
 
     const data = await response.json();
-
-    // 응답에서 관광지 목록 추출
-    const items =
-      data?.response?.body?.items?.item || [];
+    const items = data?.response?.body?.items?.item || [];
 
     const spots = Array.isArray(items)
       ? items.map((item) => ({
@@ -62,15 +57,7 @@ export const handler = async (event) => {
           contentTypeId: item.contenttypeid,
         }))
       : items.title
-      ? [
-          {
-            title: items.title,
-            addr: items.addr1,
-            image: items.firstimage || "",
-            contentId: items.contentid,
-            contentTypeId: items.contenttypeid,
-          },
-        ]
+      ? [{ title: items.title, addr: items.addr1, image: items.firstimage || "", contentId: items.contentid, contentTypeId: items.contenttypeid }]
       : [];
 
     return {
