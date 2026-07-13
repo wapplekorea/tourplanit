@@ -7,6 +7,8 @@ const DURATIONS = ["당일치기","1박 2일","2박 3일","3박 4일 이상"];
 const TARGETS = ["가족","커플/연인","친구","단체/기업","혼자"];
 
 const KTO_KEY = import.meta.env.VITE_KTO_API_KEY || "";
+const JSONBIN_KEY = import.meta.env.VITE_JSONBIN_API_KEY || "";
+const JSONBIN_BIN_URL = "https://api.jsonbin.io/v3/b";
 const CLAUDE_KEY = import.meta.env.VITE_CLAUDE_API_KEY || "";
 const STORAGE_KEY = "tourplanit_v3";
 const BASE = import.meta.env.BASE_URL || "/";
@@ -42,9 +44,33 @@ function encodePlan(plan) {
 function decodePlan(str) {
   try { return JSON.parse(decodeURIComponent(atob(str))); } catch { return null; }
 }
-function getShareUrl(plan) {
-  const base = `https://wapplekorea.github.io/tourplanit/`;
-  return `${base}?plan=${encodePlan(plan)}`;
+async function savePlanToCloud(plan) {
+  try {
+    const res = await fetch(JSONBIN_BIN_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": JSONBIN_KEY,
+        "X-Bin-Name": plan.productName?.slice(0,30) || "TourPlanit",
+        "X-Bin-Private": "false"
+      },
+      body: JSON.stringify(plan)
+    });
+    const data = await res.json();
+    return data?.metadata?.id || null;
+  } catch { return null; }
+}
+async function loadPlanFromCloud(binId) {
+  try {
+    const res = await fetch(`${JSONBIN_BIN_URL}/${binId}/latest`, {
+      headers: { "X-Master-Key": JSONBIN_KEY }
+    });
+    const data = await res.json();
+    return data?.record || null;
+  } catch { return null; }
+}
+function getShareUrl(binId) {
+  return `https://wapplekorea.github.io/tourplanit/?share=${binId}`;
 }
 
 const btn = (s={}) => ({border:"none",cursor:"pointer",fontFamily:"inherit",transition:"all .15s",...s});
@@ -202,7 +228,7 @@ function ScheduleDoc({plan}) {
               <div style={{background:C.navy,color:"#fff",padding:"6px 18px",borderRadius:24,fontSize:13,fontWeight:700}}>{d.day}</div>
               <div style={{flex:1,height:1,background:"#e0ddd8"}}/>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:10}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:10}}>
               {[["🌅 오전",d.morning,"#fff8ee","#e8a020"],["☀️ 오후",d.afternoon,"#f0f5ff","#2d6a9f"],["🌙 저녁",d.evening,"#f5f0ff","#7c5cbf"]].map(([lbl,val,bg,color])=>(
                 <div key={lbl} style={{background:bg,borderRadius:10,padding:"14px 16px",borderTop:`3px solid ${color}`}}>
                   <div style={{fontSize:11,color,fontWeight:700,marginBottom:6}}>{lbl}</div>
@@ -360,6 +386,7 @@ function CardNews({plan}) {
             navigator.clipboard.writeText(url);
             alert("공유 링크가 복사됐습니다!\n(GitHub Pages 배포 후 사용 가능)");
           }} style={btn({padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>🔗 공유 링크 복사</button>
+
         </div>
       </div>
     </Card>
@@ -465,7 +492,7 @@ ${plan.excluded?.slice(0,2).map(v=>`• ${v}`).join("\n")}
   return (
     <Card>
       <SectionTitle>KAKAO — 카카오채널 메시지</SectionTitle>
-      <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:24}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:20}}>
         <div>
           <div style={{fontSize:12,color:C.muted,marginBottom:10,fontWeight:600}}>카카오채널 미리보기</div>
           <div style={{background:"#ffe812",borderRadius:20,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.12)"}}>
@@ -534,7 +561,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
 
   const tabs = [{id:"overview",label:"📋 기획서"},{id:"itinerary",label:"🗓 일정표"},{id:"estimate",label:"💰 견적서"},{id:"cardnews",label:"🖼 카드뉴스"},{id:"blog",label:"✍️ 블로그"},{id:"kakao",label:"💬 카카오"}];
 
-  const shareUrl = getShareUrl(plan);
+  const shareUrl = `https://wapplekorea.github.io/tourplanit/?share=공유후ID`;
   const downloadTxt = () => {
     const txt = `TourPlanit 기획서\n상품명: ${plan.productName}\n슬로건: ${plan.slogan}\n\n컨셉\n${plan.concept}\n\n일정\n${plan.schedule.map(d=>`[${d.day}]\n오전: ${d.morning}\n오후: ${d.afternoon}\n저녁: ${d.evening}\n팁: ${d.tip}`).join("\n\n")}\n\n핵심포인트\n${plan.highlights?.map((h,i)=>`${i+1}. ${h}`).join("\n")}\n\n포함: ${plan.included?.join(" / ")}\n불포함: ${plan.excluded?.join(" / ")}\n\n예상가격: ${plan.estimatedPrice}\n\n생성: ${new Date(plan.createdAt).toLocaleString("ko-KR")} | TourPlanit`;
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"})); a.download = `${plan.productName}_기획서.txt`; a.click();
@@ -555,14 +582,33 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <button onClick={downloadTxt} style={btn({padding:"9px 14px",background:C.navy,color:"#fff",borderRadius:8,fontSize:12,fontWeight:600})}>📥 TXT</button>
-          <button onClick={()=>{ navigator.clipboard.writeText(shareUrl); alert("공유 링크 복사!\n(GitHub Pages 배포 후 동작)"); }} style={btn({padding:"9px 14px",border:"2px solid "+C.blue,background:"#fff",color:C.blue,borderRadius:8,fontSize:12,fontWeight:600})}>🔗 공유</button>
+          <button onClick={async()=>{
+  const shareBtn = document.activeElement;
+  const origText = "🔗 공유";
+  try {
+    shareBtn.textContent = "⏳ 저장 중...";
+    const binId = await savePlanToCloud(plan);
+    if (binId) {
+      const url = getShareUrl(binId);
+      navigator.clipboard.writeText(url);
+      shareBtn.textContent = "✅ 복사됨!";
+      setTimeout(()=>{ shareBtn.textContent = origText; }, 2000);
+    } else {
+      alert("공유 링크 생성 실패. 잠시 후 다시 시도해주세요.");
+      shareBtn.textContent = origText;
+    }
+  } catch(e) {
+    alert("오류: " + e.message);
+    shareBtn.textContent = origText;
+  }
+}} style={btn({padding:"9px 14px",border:"2px solid "+C.blue,background:"#fff",color:C.blue,borderRadius:8,fontSize:12,fontWeight:600})}>🔗 공유</button>
           <button onClick={()=>{ if(confirm("삭제할까요?")) onDelete(plan.id); }} style={btn({padding:"9px 12px",border:"2px solid #fdd",background:"#fff8f8",borderRadius:8,fontSize:12,color:C.red})}>🗑</button>
         </div>
       </div>
 
       <div style={{display:"flex",gap:2,marginBottom:24,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e8e5e0",overflowX:"auto"}}>
         {tabs.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={btn({flex:1,padding:"9px 6px",borderRadius:8,background:tab===t.id?C.navy:"transparent",color:tab===t.id?"#fff":C.muted,fontSize:12,fontWeight:tab===t.id?600:400,whiteSpace:"nowrap",minWidth:70})}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={btn({flex:1,padding:"9px 6px",borderRadius:8,background:tab===t.id?C.navy:"transparent",color:tab===t.id?"#fff":C.muted,fontSize:11,fontWeight:tab===t.id?600:400,whiteSpace:"nowrap",minWidth:60})}>
             {t.label}
           </button>
         ))}
@@ -579,7 +625,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             {plan.schedule.map((d,i)=>(
               <div key={i} style={{marginBottom:i<plan.schedule.length-1?24:0,paddingBottom:i<plan.schedule.length-1?24:0,borderBottom:i<plan.schedule.length-1?"1px solid #f0ede8":"none"}}>
                 <span style={{background:C.navy,color:"#fff",padding:"4px 14px",borderRadius:20,fontSize:12,fontWeight:700,display:"inline-block",marginBottom:12}}>{d.day}</span>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:10}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:10}}>
                   {[["🌅 오전","morning","#fff8ee","#e8a020"],["☀️ 오후","afternoon","#f0f5ff","#2d6a9f"],["🌙 저녁","evening","#f5f0ff","#7c5cbf"]].map(([lbl,fld,bg,color])=>(
                     <div key={lbl} style={{background:bg,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${color}`}}>
                       <div style={{fontSize:11,color,fontWeight:700,marginBottom:6}}>{lbl}</div>
@@ -600,7 +646,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
               </div>
             ))}
           </Card>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}}>
             <Card style={{margin:0}}>
               <SectionTitle>✅ 포함</SectionTitle>
               {plan.included?.map((v,i)=><div key={i} style={{fontSize:13,color:C.text,marginBottom:6,lineHeight:1.5}}>• {v}</div>)}
@@ -655,8 +701,23 @@ export default function App() {
   // URL 파라미터로 공유된 기획서 처리
   useEffect(()=>{
     const params = new URLSearchParams(window.location.search);
-    const planStr = params.get("plan");
-    if (planStr) {
+    const shareId = params.get("share");
+    const planStr = params.get("plan"); // 구버전 호환
+    if (shareId) {
+      setLoadingMsg("공유된 기획서 불러오는 중...");
+      setLoading(true);
+      loadPlanFromCloud(shareId).then(plan => {
+        if (plan) {
+          const item = {...plan, id: plan.id||Date.now(), createdAt: plan.createdAt||new Date().toISOString()};
+          setDetailItem(item);
+          setPage("detail");
+        } else {
+          alert("기획서를 불러올 수 없습니다.");
+        }
+        setLoading(false);
+        setLoadingMsg("");
+      });
+    } else if (planStr) {
       const plan = decodePlan(planStr);
       if (plan) { setDetailItem({...plan, id: plan.id||Date.now(), createdAt: plan.createdAt||new Date().toISOString()}); setPage("detail"); }
     }
@@ -724,7 +785,7 @@ export default function App() {
   };
 
   const Nav = () => (
-    <header style={{background:C.navy,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
+    <header style={{background:C.navy,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
       <div onClick={()=>setPage("home")} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
         <span style={{fontSize:18,color:"#fff",fontWeight:700,letterSpacing:-0.5}}>🗺️ TourPlanit</span>
         <span style={{fontSize:10,color:"#7eb8d4",background:"rgba(255,255,255,0.12)",padding:"2px 8px",borderRadius:20,letterSpacing:0.5}}>투어플래닛</span>
@@ -755,7 +816,7 @@ export default function App() {
     </div>
   );
 
-  const wrap = {maxWidth:880,margin:"0 auto",padding:"32px 24px"};
+  const wrap = {maxWidth:880,margin:"0 auto",padding:"24px 16px"};
 
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Noto Sans KR','Apple SD Gothic Neo',sans-serif",color:C.text}}>
@@ -763,7 +824,7 @@ export default function App() {
 
       {page==="home" && (
         <>
-          <div style={{background:`linear-gradient(135deg,${C.navy} 0%,#1e5799 50%,${C.blue} 100%)`,padding:"72px 24px",textAlign:"center",color:"#fff"}}>
+          <div style={{background:`linear-gradient(135deg,${C.navy} 0%,#1e5799 50%,${C.blue} 100%)`,padding:"48px 20px",textAlign:"center",color:"#fff"}}>
             <p style={{fontSize:10,color:"#7eb8d4",marginBottom:14,letterSpacing:3,fontWeight:600}}>TOUR PRODUCT PLANNER</p>
             <h1 style={{fontSize:38,fontWeight:700,margin:"0 0 16px",lineHeight:1.3,letterSpacing:-0.5}}>관광 상품 기획서를<br/>30초 만에 완성하세요</h1>
             <p style={{fontSize:15,color:"rgba(255,255,255,0.7)",margin:"0 0 36px",lineHeight:1.7}}>기획서 · 일정표 · 견적서 · 카드뉴스 · 블로그 · 카카오까지<br/>한국관광공사 OpenAPI 기반으로 자동 생성</p>
