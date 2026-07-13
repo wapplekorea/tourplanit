@@ -6,12 +6,7 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA 라우팅: 모든 경로를 index.html로 (함수 경로 제외)
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
+# SPA 라우팅: /.netlify/functions/* 는 Netlify가 자동 처리하므로 별도 규칙 불필요
 [[redirects]]
   from = "/*"
   to = "/index.html"

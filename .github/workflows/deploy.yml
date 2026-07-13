@@ -1,36 +1,3 @@
-name: Deploy to Netlify
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build
-        run: npm run build
-        env:
-          VITE_KTO_API_KEY: ${{ secrets.VITE_KTO_API_KEY }}
-          VITE_CLAUDE_API_KEY: ${{ secrets.VITE_CLAUDE_API_KEY }}
-          VITE_JSONBIN_API_KEY: ${{ secrets.VITE_JSONBIN_API_KEY }}
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: dist
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions - ${{ github.sha }}"
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+# Netlify 네이티브 CI가 GitHub 연동으로 직접 빌드+배포 처리합니다.
+# (Netlify 대시보드에서 Functions directory: netlify/functions 설정됨)
+# GitHub Actions에서 별도 배포 불필요 — 파일 유지만 합니다.

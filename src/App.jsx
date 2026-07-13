@@ -749,7 +749,7 @@ export default function App() {
     try {
       const areaCode = REGION_CODES[form.region] || "1";
       const res = await fetch(
-        `/.netlify/functions/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
+        `/api/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
       );
       if (!res.ok) throw new Error("proxy error");
       const data = await res.json();
