@@ -792,13 +792,20 @@ export default function App() {
       const res = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,messages:[{role:"user",content:prompt}]})
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,messages:[{role:"user",content:prompt}]})
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message||"API 오류");
       const text = data.content[0].text.trim();
       const s=text.indexOf("{"),e=text.lastIndexOf("}");
-      const plan = JSON.parse(text.slice(s,e+1));
+      let plan;
+      try {
+        plan = JSON.parse(text.slice(s,e+1));
+      } catch {
+        // 줄바꿈·탭 제거 후 재시도
+        const cleaned = text.slice(s,e+1).replace(/[\r\n\t]+/g," ").replace(/,\s*}/g,"}").replace(/,\s*]/g,"]");
+        plan = JSON.parse(cleaned);
+      }
       plan.region=form.region; plan.duration=form.duration; plan.theme=form.theme; plan.target=form.target;
       plan.ktoSpots=spotsArray; plan.ktoSource=source;
       const saved = saveToHistory(plan);
