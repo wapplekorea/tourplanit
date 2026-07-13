@@ -1,11 +1,17 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA 라우팅: 모든 경로를 index.html로
+# SPA 라우팅: 모든 경로를 index.html로 (함수 경로 제외)
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
