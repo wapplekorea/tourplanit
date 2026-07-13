@@ -33,7 +33,8 @@ export default async function handler(req, res) {
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`KTO API responded with status ${response.status}`);
+      const errText = await response.text();
+      return res.status(500).json({ error: `KTO ${response.status}`, detail: errText.slice(0, 300), url: url.replace(decodedKey, "***") });
     }
 
     const data = await response.json();
