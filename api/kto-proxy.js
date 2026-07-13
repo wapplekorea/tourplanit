@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       ...(contentTypeId && { contentTypeId }),
     });
 
-    const url = `https://apis.data.go.kr/B551011/KorService1/areaBasedList1?${params}`;
+    const url = `https://apis.data.go.kr/B551011/KorService2/areaBasedList2?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
