@@ -35,7 +35,7 @@ function saveToHistory(plan) {
   const h = loadHistory();
   const item = {...plan, id: Date.now(), createdAt: new Date().toISOString()};
   h.unshift(item);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(h.slice(0,20)));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(h.slice(0,100)));
   return item;
 }
 function encodePlan(plan) {
