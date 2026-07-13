@@ -687,11 +687,18 @@ export default function App() {
       setLoadingMsg("AI 기획서 생성 중...");
       const dayCount = form.duration==="당일치기"?1:form.duration==="1박 2일"?2:form.duration==="2박 3일"?3:4;
       const schedEx = Array.from({length:dayCount},(_,i)=>`{"day":"Day ${i+1}","morning":"구체적오전일정","afternoon":"구체적오후일정","evening":"구체적저녁일정","tip":"실용적팁"}`).join(",");
-      const prompt = `여행 상품 기획 전문가. 아래 조건으로 완성도 높은 기획서를 JSON으로 작성.
-지역:${form.region} 기간:${form.duration}(${dayCount}일) 테마:${form.theme} 타깃:${form.target} 예산:${form.budget||"중간"} 특이사항:${form.special||"없음"} 실제관광지:${spots}
+      const prompt = `다음 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 쓰지 마세요.
 
-규칙: JSON만 출력. 다른텍스트 금지. 문자열내 줄바꿈 금지. 일정은 실제 장소명 구체적으로.
-{"productName":"매력적상품명","slogan":"슬로건","concept":"컨셉 2-3문장","schedule":[${schedEx}],"highlights":["포인트1","포인트2","포인트3"],"included":["포함1","포함2","포함3","포함4"],"excluded":["불포함1","불포함2","불포함3"],"targetDesc":"타깃고객 1문장","estimatedPrice":"1인 XX만원대","instagram":"인스타카피100자이내 #해시태그","blog":"블로그소개150자","kakao":"카카오홍보50자"}`;
+조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget||"중간"}, 관광지=${spots}
+
+중요규칙:
+1. JSON 외 아무것도 출력하지 마세요
+2. 모든 문자열값은 한 줄로 작성 (줄바꿈 금지)
+3. 특수문자 사용 금지 (따옴표, 역슬래시 등)
+4. instagram/blog/kakao 값은 50자 이내로 짧게
+5. schedule은 정확히 ${dayCount}개
+
+{"productName":"상품명","slogan":"슬로건","concept":"컨셉설명","schedule":[${schedEx}],"highlights":["핵심1","핵심2","핵심3"],"included":["포함1","포함2","포함3","포함4"],"excluded":["불포함1","불포함2","불포함3"],"targetDesc":"타깃설명","estimatedPrice":"1인 XX만원대","instagram":"인스타카피 해시태그포함","blog":"블로그소개","kakao":"카카오홍보문구"}`;
 
       const res = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
