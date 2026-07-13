@@ -1,7 +1,7 @@
 // KTO (한국관광공사) OpenAPI 프록시
 // CORS 문제를 해결하기 위해 서버사이드에서 API 호출
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
