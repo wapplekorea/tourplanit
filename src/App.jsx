@@ -714,18 +714,31 @@ export default function App() {
   const refresh = () => setHistory(loadHistory());
 
   const fetchSpots = async () => {
-    // 배포 환경에서는 CORS로 직접 호출 불가 - 지역명 기반 더미 데이터 사용
-    const spotMap = {
+    const fallbackMap = {
       "서울": "경복궁, 북촌한옥마을, 인사동, 남산서울타워, 광장시장, 홍대, 이태원",
       "부산": "해운대, 광안리, 감천문화마을, 자갈치시장, 태종대, 흰여울문화마을",
       "제주": "한라산, 성산일출봉, 협재해수욕장, 천지연폭포, 우도, 만장굴, 중문관광단지",
-      "경주": "불국사, 석굴암, 첨성대, 안압지, 국립경주박물관, 대릉원",
       "인천": "차이나타운, 월미도, 송도센트럴파크, 개항장거리, 인천상륙작전기념관",
       "강원": "설악산, 오대산, 속초해수욕장, 낙산사, 춘천닭갈비골목",
       "전남": "순천만국가정원, 보성녹차밭, 여수밤바다, 담양죽녹원",
       "경남": "통영케이블카, 남해독일마을, 하동쌍계사, 거제해금강",
     };
-    return spotMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
+
+    try {
+      const areaCode = REGION_CODES[form.region] || "1";
+      const res = await fetch(
+        `/.netlify/functions/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
+      );
+      if (!res.ok) throw new Error("proxy error");
+      const data = await res.json();
+      if (data.spots && data.spots.length > 0) {
+        return data.spots.map((s) => s.title).join(", ");
+      }
+      throw new Error("no spots");
+    } catch {
+      // KTO API 실패 시 폴백
+      return fallbackMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
+    }
   };
 
   const handleGenerate = async () => {
