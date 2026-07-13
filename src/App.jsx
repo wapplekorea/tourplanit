@@ -671,6 +671,28 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             <div style={{fontSize:30,fontWeight:700,color:C.amber}}>{plan.estimatedPrice}</div>
           </div>
           {editingField && <div style={{position:"fixed",bottom:24,right:24,background:C.blue,color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>✏️ 편집 중 — 클릭 후 다른 곳 클릭하면 저장</div>}
+          <div style={{background:"#f0f7ff",border:"1.5px solid #b3d4f5",borderRadius:12,padding:"14px 18px",marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:"#1a5fa8"}}>📍 한국관광공사 OpenAPI 조회 데이터</span>
+              {plan.ktoSource==="kto"
+                ? <span style={{fontSize:10,background:"#1a5fa8",color:"#fff",padding:"2px 8px",borderRadius:20}}>실시간 연동</span>
+                : <span style={{fontSize:10,background:"#888",color:"#fff",padding:"2px 8px",borderRadius:20}}>기본 데이터</span>
+              }
+            </div>
+            {plan.ktoSpots && plan.ktoSpots.length > 0 ? (
+              <>
+                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>areaBasedList1 · 총 {plan.ktoSpots.length}개 관광지 조회</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {plan.ktoSpots.slice(0,12).map((s,i)=>(
+                    <span key={i} style={{fontSize:11,background:"#fff",border:"1px solid #b3d4f5",borderRadius:6,padding:"3px 9px",color:"#1a5fa8"}}>{s.title}</span>
+                  ))}
+                  {plan.ktoSpots.length > 12 && <span style={{fontSize:11,color:"#5580a8",padding:"3px 6px"}}>+{plan.ktoSpots.length-12}개</span>}
+                </div>
+              </>
+            ) : (
+              <div style={{fontSize:12,color:"#5580a8"}}>{plan.region} 지역 기본 데이터 적용</div>
+            )}
+          </div>
           <p style={{textAlign:"center",fontSize:11,color:C.light}}>한국관광공사 OpenAPI · TourPlanit · {new Date(plan.createdAt).toLocaleString("ko-KR")}</p>
         </>
       )}
@@ -732,12 +754,17 @@ export default function App() {
       if (!res.ok) throw new Error("proxy error");
       const data = await res.json();
       if (data.spots && data.spots.length > 0) {
-        return data.spots.map((s) => s.title).join(", ");
+        return {
+          spotsStr: data.spots.map((s) => s.title).join(", "),
+          spotsArray: data.spots,
+          source: "kto",
+        };
       }
       throw new Error("no spots");
     } catch {
       // KTO API 실패 시 폴백
-      return fallbackMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
+      const fallback = fallbackMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
+      return { spotsStr: fallback, spotsArray: [], source: "fallback" };
     }
   };
 
@@ -745,13 +772,13 @@ export default function App() {
     setLoading(true);
     try {
       setLoadingMsg("관광공사 데이터 수집 중...");
-      const spots = await fetchSpots();
+      const { spotsStr, spotsArray, source } = await fetchSpots();
       setLoadingMsg("AI 기획서 생성 중...");
       const dayCount = form.duration==="당일치기"?1:form.duration==="1박 2일"?2:form.duration==="2박 3일"?3:4;
       const schedEx = Array.from({length:dayCount},(_,i)=>`{"day":"Day ${i+1}","morning":"구체적오전일정","afternoon":"구체적오후일정","evening":"구체적저녁일정","tip":"실용적팁"}`).join(",");
       const prompt = `다음 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 쓰지 마세요.
 
-조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget||"중간"}, 관광지=${spots}
+조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget||"중간"}, 관광지=${spotsStr}
 
 중요규칙:
 1. JSON 외 아무것도 출력하지 마세요
@@ -773,6 +800,7 @@ export default function App() {
       const s=text.indexOf("{"),e=text.lastIndexOf("}");
       const plan = JSON.parse(text.slice(s,e+1));
       plan.region=form.region; plan.duration=form.duration; plan.theme=form.theme; plan.target=form.target;
+      plan.ktoSpots=spotsArray; plan.ktoSource=source;
       const saved = saveToHistory(plan);
       refresh(); setDetailItem(saved); setPage("detail");
     } catch(e) { alert("오류: "+e.message+"\n다시 시도해주세요."); }
