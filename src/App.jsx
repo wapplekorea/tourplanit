@@ -69,8 +69,9 @@ async function loadPlanFromCloud(binId) {
     return data?.record || null;
   } catch { return null; }
 }
-function getShareUrl(binId) {
-  return `https://wapplekorea.github.io/tourplanit/?share=${binId}`;
+function getShareUrl(plan) {
+  const encoded = encodePlan(plan);
+  return `${window.location.origin}/?share=${encoded}`;
 }
 
 const btn = (s={}) => ({border:"none",cursor:"pointer",fontFamily:"inherit",transition:"all .15s",...s});
@@ -384,7 +385,7 @@ function CardNews({plan}) {
           <button onClick={()=>{
             const url = getShareUrl(plan);
             navigator.clipboard.writeText(url);
-            alert("공유 링크가 복사됐습니다!\n(GitHub Pages 배포 후 사용 가능)");
+            alert("공유 링크가 복사됐습니다!");
           }} style={btn({padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>🔗 공유 링크 복사</button>
 
         </div>
@@ -561,7 +562,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
 
   const tabs = [{id:"overview",label:"📋 기획서"},{id:"itinerary",label:"🗓 일정표"},{id:"estimate",label:"💰 견적서"},{id:"cardnews",label:"🖼 카드뉴스"},{id:"blog",label:"✍️ 블로그"},{id:"kakao",label:"💬 카카오"}];
 
-  const shareUrl = `https://wapplekorea.github.io/tourplanit/?share=공유후ID`;
+  const shareUrl = getShareUrl(plan);
   const downloadTxt = () => {
     const txt = `TourPlanit 기획서\n상품명: ${plan.productName}\n슬로건: ${plan.slogan}\n\n컨셉\n${plan.concept}\n\n일정\n${plan.schedule.map(d=>`[${d.day}]\n오전: ${d.morning}\n오후: ${d.afternoon}\n저녁: ${d.evening}\n팁: ${d.tip}`).join("\n\n")}\n\n핵심포인트\n${plan.highlights?.map((h,i)=>`${i+1}. ${h}`).join("\n")}\n\n포함: ${plan.included?.join(" / ")}\n불포함: ${plan.excluded?.join(" / ")}\n\n예상가격: ${plan.estimatedPrice}\n\n생성: ${new Date(plan.createdAt).toLocaleString("ko-KR")} | TourPlanit`;
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"})); a.download = `${plan.productName}_기획서.txt`; a.click();
@@ -586,17 +587,10 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
   const shareBtn = document.activeElement;
   const origText = "🔗 공유";
   try {
-    shareBtn.textContent = "⏳ 저장 중...";
-    const binId = await savePlanToCloud(plan);
-    if (binId) {
-      const url = getShareUrl(binId);
-      navigator.clipboard.writeText(url);
-      shareBtn.textContent = "✅ 복사됨!";
-      setTimeout(()=>{ shareBtn.textContent = origText; }, 2000);
-    } else {
-      alert("공유 링크 생성 실패. 잠시 후 다시 시도해주세요.");
-      shareBtn.textContent = origText;
-    }
+    const url = getShareUrl(plan);
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = "✅ 복사됨!";
+    setTimeout(()=>{ shareBtn.textContent = origText; }, 2000);
   } catch(e) {
     alert("오류: " + e.message);
     shareBtn.textContent = origText;
@@ -704,19 +698,13 @@ export default function App() {
     const shareId = params.get("share");
     const planStr = params.get("plan"); // 구버전 호환
     if (shareId) {
-      setLoadingMsg("공유된 기획서 불러오는 중...");
-      setLoading(true);
-      loadPlanFromCloud(shareId).then(plan => {
-        if (plan) {
-          const item = {...plan, id: plan.id||Date.now(), createdAt: plan.createdAt||new Date().toISOString()};
-          setDetailItem(item);
-          setPage("detail");
-        } else {
-          alert("기획서를 불러올 수 없습니다.");
-        }
-        setLoading(false);
-        setLoadingMsg("");
-      });
+      const plan = decodePlan(shareId);
+      if (plan) {
+        setDetailItem({...plan, id: plan.id||Date.now(), createdAt: plan.createdAt||new Date().toISOString()});
+        setPage("detail");
+      } else {
+        alert("기획서를 불러올 수 없습니다.");
+      }
     } else if (planStr) {
       const plan = decodePlan(planStr);
       if (plan) { setDetailItem({...plan, id: plan.id||Date.now(), createdAt: plan.createdAt||new Date().toISOString()}); setPage("detail"); }
