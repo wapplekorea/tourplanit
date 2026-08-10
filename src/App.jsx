@@ -136,8 +136,9 @@ function EstimateCalc({plan}) {
 
   return (
     <Card>
-      <SectionTitle>ESTIMATE — 견적 계산기</SectionTitle>
-      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20,background:C.gray,borderRadius:10,padding:"14px 18px",flexWrap:"wrap"}}>
+      <SectionTitle>견적 초안</SectionTitle>
+      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>기본 단가를 바탕으로 산정한 내부 검토용 계산입니다. 실제 견적은 협력사 조건과 최종 인원에 맞춰 확인하세요.</p>
+      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20,background:"#f4f7fb",border:"1px solid #e1e8f0",borderRadius:12,padding:"14px 18px",flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:13,fontWeight:600,color:C.text}}>참가 인원</span>
           <button onClick={()=>setPax(Math.max(1,pax-1))} style={btn({width:30,height:30,borderRadius:"50%",background:C.navy,color:"#fff",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"})}>−</button>
@@ -146,7 +147,7 @@ function EstimateCalc({plan}) {
           <span style={{fontSize:13,color:C.muted}}>명</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10,marginLeft:"auto"}}>
-          <span style={{fontSize:13,fontWeight:600,color:C.text}}>마진</span>
+          <span style={{fontSize:13,fontWeight:600,color:C.text}}>운영 기준</span>
           {[10,15,20,25,30].map(m=>(
             <button key={m} onClick={()=>setMargin(m)} style={btn({padding:"4px 10px",borderRadius:16,border:`2px solid ${margin===m?C.amber:"#ddd"}`,background:margin===m?C.amber:"#fff",color:margin===m?"#fff":"#555",fontSize:12,fontWeight:margin===m?700:400})}>{m}%</button>
           ))}
@@ -155,10 +156,11 @@ function EstimateCalc({plan}) {
 
       <div id={printId} style={{fontFamily:"'Noto Sans KR',sans-serif"}}>
         <h1 style={{display:"none"}}>{plan.productName} — 견적서</h1>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+        <div style={{overflowX:"auto",border:"1px solid #e8edf3",borderRadius:12}}>
+        <table style={{width:"100%",minWidth:620,borderCollapse:"collapse",fontSize:13}}>
           <thead>
             <tr style={{background:C.gray}}>
-              {["항목","단가 (1인)","소계","비고"].map(h=>(
+              {["항목","1인 기준","총액","산정 기준"].map(h=>(
                 <th key={h} style={{padding:"10px 14px",textAlign:"left",fontWeight:600,color:C.muted,fontSize:12,borderBottom:"2px solid #e0ddd8"}}>{h}</th>
               ))}
             </tr>
@@ -178,7 +180,7 @@ function EstimateCalc({plan}) {
               <td style={{padding:"11px 14px",fontSize:12,color:C.muted}}>1인 {subtotal.toLocaleString()}원</td>
             </tr>
             <tr style={{background:"#f4f2ef"}}>
-              <td colSpan={2} style={{padding:"11px 14px",fontWeight:700,color:C.muted}}>운영 마진 ({margin}%)</td>
+              <td colSpan={2} style={{padding:"11px 14px",fontWeight:700,color:C.muted}}>운영 기준 ({margin}%)</td>
               <td style={{padding:"11px 14px",fontWeight:700,color:C.text}}>{(marginAmt*pax).toLocaleString()}원</td>
               <td style={{padding:"11px 14px",fontSize:12,color:C.muted}}>조정 가능</td>
             </tr>
@@ -189,18 +191,19 @@ function EstimateCalc({plan}) {
             </tr>
           </tbody>
         </table>
-        <p style={{fontSize:11,color:C.light,marginTop:8}}>* 실제 견적은 현지 상황에 따라 달라질 수 있습니다. 참고용으로 활용하세요.</p>
+        </div>
+        <p style={{fontSize:11,color:C.light,marginTop:10}}>* 실제 견적은 현지 상황, 객실 구성, 협력사 확정 조건에 따라 달라질 수 있습니다.</p>
         <p style={{fontSize:11,color:C.light}}>* 생성일: {new Date(plan.createdAt).toLocaleDateString("ko-KR")} | TourPlanit</p>
       </div>
 
       <div style={{display:"flex",gap:8,marginTop:16}}>
-        <button onClick={()=>printPDF(printId, `${plan.productName}_견적서`)} style={btn({flex:1,padding:"11px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>🖨️ PDF 출력</button>
+        <button onClick={()=>printPDF(printId, `${plan.productName}_견적서`)} style={btn({flex:1,padding:"11px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>견적서 PDF</button>
         <button onClick={()=>{
           const rows = items.map(i=>`${i.label}\t${i.unit.toLocaleString()}원\t${(i.unit*pax).toLocaleString()}원`).join("\n");
           const txt = `[${plan.productName}] 견적서\n참가인원: ${pax}명\n\n${rows}\n\n원가합계: ${(subtotal*pax).toLocaleString()}원\n마진(${margin}%): ${(marginAmt*pax).toLocaleString()}원\n최종 판매가(1인): ${final.toLocaleString()}원\n\n생성: TourPlanit`;
           navigator.clipboard.writeText(txt);
-          alert("이메일용 견적 복사됐습니다!");
-        }} style={btn({flex:1,padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>📧 이메일용 복사</button>
+          alert("이메일용 견적을 복사했습니다.");
+        }} style={btn({flex:1,padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>이메일용 텍스트 복사</button>
       </div>
     </Card>
   );
@@ -211,17 +214,17 @@ function ScheduleDoc({plan}) {
   const printId = "schedule-print";
   return (
     <Card>
-      <SectionTitle>ITINERARY — 일정표</SectionTitle>
+      <SectionTitle>일정표 초안</SectionTitle>
+      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>고객 안내와 현장 운영의 공통 초안입니다. 항공·집결·수배 확정 정보는 공유 전 다시 확인하세요.</p>
       <div id={printId} style={{fontFamily:"'Noto Sans KR',sans-serif"}}>
         <div style={{borderBottom:"3px solid "+C.navy,paddingBottom:16,marginBottom:24}}>
-          <div style={{fontSize:10,color:C.blue,letterSpacing:2,marginBottom:4}}>TRAVEL ITINERARY</div>
+          <div style={{fontSize:10,color:C.blue,letterSpacing:1.6,fontWeight:700,marginBottom:4}}>TOURPLANIT · ITINERARY DRAFT</div>
           <div style={{fontSize:20,fontWeight:700,color:C.navy}}>{plan.productName}</div>
           <div style={{fontSize:13,color:C.amber,fontWeight:600,marginTop:4}}>{plan.slogan}</div>
-          <div style={{display:"flex",gap:16,marginTop:12,fontSize:12,color:C.muted}}>
-            <span>📍 {plan.region}</span>
-            <span>🗓 {plan.duration}</span>
-            <span>🎯 {plan.theme}</span>
-            <span>👥 {plan.target}</span>
+          <div style={{display:"flex",gap:8,marginTop:14,fontSize:12,color:C.muted,flexWrap:"wrap"}}>
+            {[["여행 지역",plan.region],["일정",plan.duration],["여행 테마",plan.theme],["추천 대상",plan.target]].map(([label,value])=>(
+              <span key={label} style={{background:"#f4f7fb",border:"1px solid #e1e8f0",borderRadius:16,padding:"5px 9px"}}>{label} · {value}</span>
+            ))}
           </div>
         </div>
 
@@ -240,20 +243,20 @@ function ScheduleDoc({plan}) {
               ))}
             </div>
             <div style={{background:"#fffbf0",borderRadius:8,padding:"8px 14px",fontSize:12,color:"#c47f00",border:"1px solid #f5e4a0"}}>
-              💡 <strong>여행 팁</strong> {d.tip}
+              <strong>운영 메모</strong> · {d.tip}
             </div>
           </div>
         ))}
 
         <div style={{background:C.gray,borderRadius:10,padding:16,marginTop:8}}>
           <div style={{fontSize:12,fontWeight:700,color:C.navy,marginBottom:10}}>포함/불포함 사항</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:16}}>
             <div>
-              <div style={{fontSize:11,color:C.green,fontWeight:700,marginBottom:6}}>✅ 포함</div>
+              <div style={{fontSize:11,color:C.green,fontWeight:700,marginBottom:6}}>포함 사항</div>
               {plan.included?.map((v,i)=><div key={i} style={{fontSize:12,color:C.text,marginBottom:4}}>• {v}</div>)}
             </div>
             <div>
-              <div style={{fontSize:11,color:C.red,fontWeight:700,marginBottom:6}}>❌ 불포함</div>
+              <div style={{fontSize:11,color:C.red,fontWeight:700,marginBottom:6}}>불포함 사항</div>
               {plan.excluded?.map((v,i)=><div key={i} style={{fontSize:12,color:C.text,marginBottom:4}}>• {v}</div>)}
             </div>
           </div>
@@ -262,12 +265,12 @@ function ScheduleDoc({plan}) {
       </div>
 
       <div style={{display:"flex",gap:8,marginTop:16}}>
-        <button onClick={()=>printPDF(printId, `${plan.productName}_일정표`)} style={btn({flex:1,padding:"11px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>🖨️ 일정표 PDF</button>
+        <button onClick={()=>printPDF(printId, `${plan.productName}_일정표`)} style={btn({flex:1,padding:"11px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>일정표 PDF</button>
         <button onClick={()=>{
           const txt = plan.schedule.map(d=>`[${d.day}]\n오전: ${d.morning}\n오후: ${d.afternoon}\n저녁: ${d.evening}\n💡 ${d.tip}`).join("\n\n");
           navigator.clipboard.writeText(`${plan.productName}\n${plan.slogan}\n\n${txt}`);
-          alert("일정표 복사됐습니다!");
-        }} style={btn({flex:1,padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>📋 일정표 복사</button>
+          alert("일정표를 복사했습니다.");
+        }} style={btn({flex:1,padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>일정표 텍스트 복사</button>
       </div>
     </Card>
   );
