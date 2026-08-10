@@ -562,7 +562,14 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
     return <span onClick={()=>{ setEditing(true); setEditingField(field); }} style={{...style,cursor:"text",borderBottom:"1px dashed "+C.muted,paddingBottom:1}} title="클릭해서 편집">{value}</span>;
   };
 
-  const tabs = [{id:"overview",label:"📋 기획서"},{id:"itinerary",label:"🗓 일정표"},{id:"estimate",label:"💰 견적서"},{id:"cardnews",label:"🖼 카드뉴스"},{id:"blog",label:"✍️ 블로그"},{id:"kakao",label:"💬 카카오"}];
+  const tabs = [
+    {id:"overview",label:"기획 요약"},
+    {id:"itinerary",label:"일정"},
+    {id:"estimate",label:"견적"},
+    {id:"cardnews",label:"카드뉴스"},
+    {id:"blog",label:"블로그"},
+    {id:"kakao",label:"채널 문구"},
+  ];
 
   const shareUrl = getShareUrl(plan);
   const downloadTxt = () => {
@@ -572,22 +579,23 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
 
   return (
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:16,paddingBottom:20,borderBottom:"1px solid #e8edf3"}}>
         <div>
-          <button onClick={onBack} style={btn({padding:"6px 14px",border:"2px solid #ddd",borderRadius:8,background:"#fff",fontSize:12,color:C.muted,marginBottom:12})}>← 목록으로</button>
-          <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>{tag(plan.region,C.blue)} {tag(plan.duration,C.amber)} {tag(plan.theme,C.green)} {tag(plan.target,C.purple)}</div>
-          <h2 style={{fontSize:22,fontWeight:700,color:C.navy,margin:"0 0 4px"}}>
-            <EditableText field="productName" value={plan.productName} style={{fontSize:22,fontWeight:700,color:C.navy}}/>
+          <button onClick={onBack} style={btn({padding:"6px 0",background:"transparent",fontSize:12,color:C.muted,marginBottom:12})}>← 기획서 목록</button>
+          <div style={{fontSize:11,color:C.light,fontWeight:700,letterSpacing:0.6,marginBottom:8}}>PRODUCT PLANNING DRAFT · {new Date(plan.createdAt).toLocaleDateString("ko-KR")}</div>
+          <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>{tag(plan.region,C.blue)} {tag(plan.duration,C.amber)} {tag(plan.theme,C.green)} {tag(plan.target,C.purple)}</div>
+          <h2 style={{fontSize:26,fontWeight:750,letterSpacing:-0.8,color:C.navy,margin:"0 0 6px"}}>
+            <EditableText field="productName" value={plan.productName} style={{fontSize:26,fontWeight:750,letterSpacing:-0.8,color:C.navy}}/>
           </h2>
-          <div style={{color:C.amber,fontWeight:600,fontSize:14}}>
-            <EditableText field="slogan" value={plan.slogan} style={{color:C.amber,fontWeight:600,fontSize:14}}/>
+          <div style={{color:C.muted,fontWeight:500,fontSize:14}}>
+            <EditableText field="slogan" value={plan.slogan} style={{color:C.muted,fontWeight:500,fontSize:14}}/>
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          <button onClick={downloadTxt} style={btn({padding:"9px 14px",background:C.navy,color:"#fff",borderRadius:8,fontSize:12,fontWeight:600})}>📥 TXT</button>
+          <button onClick={downloadTxt} style={btn({padding:"9px 14px",background:C.navy,color:"#fff",borderRadius:8,fontSize:12,fontWeight:600})}>텍스트 내보내기</button>
           <button onClick={async()=>{
   const shareBtn = document.activeElement;
-  const origText = "🔗 공유";
+  const origText = "공유 링크 복사";
   try {
     const url = getShareUrl(plan);
     await navigator.clipboard.writeText(url);
@@ -597,14 +605,14 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
     alert("오류: " + e.message);
     shareBtn.textContent = origText;
   }
-}} style={btn({padding:"9px 14px",border:"2px solid "+C.blue,background:"#fff",color:C.blue,borderRadius:8,fontSize:12,fontWeight:600})}>🔗 공유</button>
-          <button onClick={()=>{ if(confirm("삭제할까요?")) onDelete(plan.id); }} style={btn({padding:"9px 12px",border:"2px solid #fdd",background:"#fff8f8",borderRadius:8,fontSize:12,color:C.red})}>🗑</button>
+}} style={btn({padding:"9px 14px",border:"1px solid "+C.blue,background:"#fff",color:C.blue,borderRadius:8,fontSize:12,fontWeight:600})}>공유 링크 복사</button>
+          <button onClick={()=>{ if(confirm("삭제할까요?")) onDelete(plan.id); }} style={btn({padding:"9px 12px",border:"1px solid #f4c8cc",background:"#fff8f8",borderRadius:8,fontSize:12,color:C.red})}>삭제</button>
         </div>
       </div>
 
-      <div style={{display:"flex",gap:2,marginBottom:24,background:"#fff",borderRadius:12,padding:4,border:"1px solid #e8e5e0",overflowX:"auto"}}>
+      <div style={{display:"flex",gap:4,marginBottom:24,borderBottom:"1px solid #dfe6ee",overflowX:"auto"}}>
         {tabs.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={btn({flex:1,padding:"9px 6px",borderRadius:8,background:tab===t.id?C.navy:"transparent",color:tab===t.id?"#fff":C.muted,fontSize:11,fontWeight:tab===t.id?600:400,whiteSpace:"nowrap",minWidth:60})}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={btn({padding:"12px 14px",borderRadius:"8px 8px 0 0",borderBottom:tab===t.id?`3px solid ${C.blue}`:"3px solid transparent",background:tab===t.id?"#f1f7ff":"transparent",color:tab===t.id?C.blue:C.muted,fontSize:12,fontWeight:tab===t.id?700:500,whiteSpace:"nowrap",minWidth:76})}>
             {t.label}
           </button>
         ))}
@@ -613,52 +621,53 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
       {tab==="overview" && (
         <>
           <Card style={{borderLeft:`4px solid ${C.blue}`}}>
-            <SectionTitle>CONCEPT</SectionTitle>
+            <SectionTitle>상품 컨셉</SectionTitle>
             <EditableText field="concept" value={plan.concept} style={{fontSize:14,color:C.text,lineHeight:1.8}} multiline/>
           </Card>
           <Card>
-            <SectionTitle>SCHEDULE</SectionTitle>
+            <SectionTitle>일정 초안</SectionTitle>
+            <p style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-6px 0 18px"}}>시간과 이동 동선, 운영 가능 여부를 확인한 뒤 일정표에서 보완하세요.</p>
             {plan.schedule.map((d,i)=>(
               <div key={i} style={{marginBottom:i<plan.schedule.length-1?24:0,paddingBottom:i<plan.schedule.length-1?24:0,borderBottom:i<plan.schedule.length-1?"1px solid #f0ede8":"none"}}>
-                <span style={{background:C.navy,color:"#fff",padding:"4px 14px",borderRadius:20,fontSize:12,fontWeight:700,display:"inline-block",marginBottom:12}}>{d.day}</span>
+                <span style={{background:C.navy,color:"#fff",padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,display:"inline-block",marginBottom:12}}>{d.day}</span>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:10}}>
-                  {[["🌅 오전","morning","#fff8ee","#e8a020"],["☀️ 오후","afternoon","#f0f5ff","#2d6a9f"],["🌙 저녁","evening","#f5f0ff","#7c5cbf"]].map(([lbl,fld,bg,color])=>(
-                    <div key={lbl} style={{background:bg,borderRadius:8,padding:"12px 14px",borderTop:`3px solid ${color}`}}>
+                  {[["오전","morning","#f8fbff","#3182f6"],["오후","afternoon","#f7fbf8","#12b886"],["저녁","evening","#fbf9ff","#7b61ff"]].map(([lbl,fld,bg,color])=>(
+                    <div key={lbl} style={{background:bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${color}22`,borderTop:`3px solid ${color}`}}>
                       <div style={{fontSize:11,color,fontWeight:700,marginBottom:6}}>{lbl}</div>
                       <div style={{fontSize:13,color:C.text,lineHeight:1.5}}>{d[fld]}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{background:"#fffbf0",borderRadius:6,padding:"8px 14px",fontSize:12,color:"#c47f00",border:"1px solid #f5e4a0"}}>💡 {d.tip}</div>
+                <div style={{background:"#fffbf0",borderRadius:6,padding:"9px 14px",fontSize:12,color:"#8c6200",border:"1px solid #f5e4a0"}}><strong>운영 메모</strong> · {d.tip}</div>
               </div>
             ))}
           </Card>
           <Card>
-            <SectionTitle>HIGHLIGHTS</SectionTitle>
+            <SectionTitle>핵심 포인트</SectionTitle>
             {plan.highlights?.map((h,i)=>(
               <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:10}}>
-                <span style={{background:C.amber,color:"#fff",width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{i+1}</span>
+                <span style={{border:`1px solid ${C.blue}`,color:C.blue,width:24,height:24,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0}}>{i+1}</span>
                 <span style={{color:C.text,fontSize:14,lineHeight:1.6}}>{h}</span>
               </div>
             ))}
           </Card>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginBottom:16}}>
             <Card style={{margin:0}}>
-              <SectionTitle>✅ 포함</SectionTitle>
+              <SectionTitle>포함 사항</SectionTitle>
               {plan.included?.map((v,i)=><div key={i} style={{fontSize:13,color:C.text,marginBottom:6,lineHeight:1.5}}>• {v}</div>)}
             </Card>
             <Card style={{margin:0}}>
-              <SectionTitle>❌ 불포함</SectionTitle>
+              <SectionTitle>불포함 사항</SectionTitle>
               {plan.excluded?.map((v,i)=><div key={i} style={{fontSize:13,color:C.text,marginBottom:6,lineHeight:1.5}}>• {v}</div>)}
             </Card>
           </div>
           <Card>
-            <SectionTitle>TARGET</SectionTitle>
+            <SectionTitle>추천 고객</SectionTitle>
             <p style={{fontSize:14,color:C.text,lineHeight:1.7,margin:0}}>{plan.targetDesc}</p>
           </Card>
           <Card>
-            <SectionTitle>MARKETING COPY</SectionTitle>
-            {[{key:"instagram",label:"📸 인스타그램",color:"#c13584"},{key:"blog",label:"📝 블로그",color:"#ff6b35"},{key:"kakao",label:"💬 카카오",color:"#f7b731"}].map(({key,label,color})=>(
+            <SectionTitle>홍보 문구</SectionTitle>
+            {[{key:"instagram",label:"인스타그램",color:"#c13584"},{key:"blog",label:"블로그",color:"#e85d30"},{key:"kakao",label:"카카오",color:"#b57a00"}].map(({key,label,color})=>(
               <div key={key} style={{background:C.gray,borderRadius:8,padding:16,marginBottom:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <span style={{fontSize:13,fontWeight:700,color}}>{label}</span>
@@ -669,13 +678,14 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             ))}
           </Card>
           <div style={{background:C.navy,borderRadius:14,padding:24,textAlign:"center",color:"#fff",marginBottom:16}}>
-            <div style={{fontSize:10,color:"#7eb8d4",marginBottom:6,letterSpacing:2}}>ESTIMATED PRICE</div>
+            <div style={{fontSize:11,color:"#b9d9f5",marginBottom:6,fontWeight:700,letterSpacing:0.7}}>예상 판매가</div>
             <div style={{fontSize:30,fontWeight:700,color:C.amber}}>{plan.estimatedPrice}</div>
+            <div style={{fontSize:12,color:"#b9d9f5",marginTop:8}}>초안 기준입니다. 실제 원가와 인원을 확인해 조정하세요.</div>
           </div>
           {editingField && <div style={{position:"fixed",bottom:24,right:24,background:C.blue,color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>✏️ 편집 중 — 클릭 후 다른 곳 클릭하면 저장</div>}
           <div style={{background:"#f0f7ff",border:"1.5px solid #b3d4f5",borderRadius:12,padding:"14px 18px",marginBottom:12}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{fontSize:13,fontWeight:700,color:"#1a5fa8"}}>📍 한국관광공사 OpenAPI 조회 데이터</span>
+              <span style={{fontSize:13,fontWeight:700,color:"#1a5fa8"}}>관광 데이터 근거</span>
               {plan.ktoSource==="kto"
                 ? <span style={{fontSize:10,background:"#1a5fa8",color:"#fff",padding:"2px 8px",borderRadius:20}}>실시간 연동</span>
                 : <span style={{fontSize:10,background:"#888",color:"#fff",padding:"2px 8px",borderRadius:20}}>기본 데이터</span>
@@ -683,7 +693,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             </div>
             {plan.ktoSpots && plan.ktoSpots.length > 0 ? (
               <>
-                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>areaBasedList2 · 총 {plan.ktoSpots.length}개 관광지 조회</div>
+                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>관광공사 지역 기반 관광지 {plan.ktoSpots.length}개를 기획 초안에 참고했습니다.</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {plan.ktoSpots.slice(0,12).map((s,i)=>(
                     <span key={i} style={{fontSize:11,background:"#fff",border:"1px solid #b3d4f5",borderRadius:6,padding:"3px 9px",color:"#1a5fa8"}}>{s.title}</span>
@@ -695,7 +705,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
               <div style={{fontSize:12,color:"#5580a8"}}>{plan.region} 지역 기본 데이터 적용</div>
             )}
           </div>
-          <p style={{textAlign:"center",fontSize:11,color:C.light}}>한국관광공사 OpenAPI · TourPlanit · {new Date(plan.createdAt).toLocaleString("ko-KR")}</p>
+          <p style={{textAlign:"center",fontSize:11,color:C.light}}>관광 데이터는 참고 근거이며, 운영 가능 여부와 최신 정보는 담당자가 확인합니다.</p>
         </>
       )}
       {tab==="itinerary" && <ScheduleDoc plan={plan}/>}
