@@ -311,7 +311,8 @@ function CardNews({plan}) {
 
   return (
     <Card>
-      <SectionTitle>CARD NEWS — SNS 카드뉴스</SectionTitle>
+      <SectionTitle>카드뉴스 초안</SectionTitle>
+      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>상품의 핵심 메시지를 슬라이드 단위로 검토하는 홍보 초안입니다. 게시 전 문구와 가격·일정 조건을 확인하세요.</p>
       <div style={{position:"relative",userSelect:"none"}}>
         <div style={{background:cl.bg,borderRadius:20,overflow:"hidden",position:"relative",minHeight:400,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center",padding:"48px 40px"}}>
           {/* 배경 이미지 (관광지 실제 사진) */}
@@ -385,13 +386,13 @@ function CardNews({plan}) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
           <button onClick={()=>{
             const el = document.querySelector('[data-slide]');
-            alert("슬라이드 저장: 브라우저 캡처(Cmd+Shift+4) 또는 우클릭→이미지 저장을 이용하세요.\n\n배포 후에는 자동 다운로드가 됩니다.");
-          }} style={btn({padding:"11px",borderRadius:8,background:C.amber,color:"#fff",fontSize:13,fontWeight:600})}>📸 이 슬라이드 캡처</button>
+      alert("슬라이드 저장은 브라우저의 화면 캡처 또는 이미지 저장 기능을 이용하세요.\n\n자동 이미지 다운로드는 별도 기능으로 준비합니다.");
+          }} style={btn({padding:"11px",borderRadius:8,background:C.amber,color:"#fff",fontSize:13,fontWeight:600})}>현재 슬라이드 저장 안내</button>
           <button onClick={()=>{
             const url = getShareUrl(plan);
             navigator.clipboard.writeText(url);
-            alert("공유 링크가 복사됐습니다!");
-          }} style={btn({padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>🔗 공유 링크 복사</button>
+            alert("공유 링크를 복사했습니다.");
+          }} style={btn({padding:"11px",borderRadius:8,border:"2px solid "+C.navy,background:"#fff",color:C.navy,fontSize:13,fontWeight:600})}>공유 링크 복사</button>
 
         </div>
       </div>
@@ -440,13 +441,13 @@ function BlogContent({plan}) {
 
   return (
     <Card>
-      <SectionTitle>BLOG — 블로그 본문</SectionTitle>
+      <SectionTitle>블로그 본문 초안</SectionTitle>
       {!blog ? (
         <div style={{textAlign:"center",padding:"32px 0"}}>
-          <div style={{fontSize:40,marginBottom:16}}>✍️</div>
-          <p style={{fontSize:14,color:C.muted,marginBottom:20,lineHeight:1.7}}>AI가 1500자 이상의<br/>네이버 블로그 포스트를 자동 작성합니다.</p>
+          <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:10}}>블로그 초안 생성</div>
+          <p style={{fontSize:14,color:C.muted,marginBottom:20,lineHeight:1.7}}>상품 정보와 일정표를 바탕으로<br/>수정 가능한 홍보 문안을 작성합니다.</p>
           <button onClick={generate} disabled={loading} style={btn({padding:"13px 32px",background:C.blue,color:"#fff",borderRadius:8,fontSize:14,fontWeight:600})}>
-            {loading?"⏳ 작성 중... (15초 내외)":"✍️ 블로그 본문 생성"}
+            {loading?"본문 작성 중...":"블로그 본문 생성"}
           </button>
         </div>
       ) : (
@@ -460,9 +461,9 @@ function BlogContent({plan}) {
           </div>
           <div style={{fontSize:12,color:C.muted,marginBottom:12,textAlign:"right"}}>{blog.length.toLocaleString()}자</div>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={()=>setEditing(!editing)} style={btn({padding:"10px 16px",borderRadius:8,border:"2px solid "+C.blue,background:"#fff",color:C.blue,fontSize:13,fontWeight:600})}>{editing?"✅ 편집 완료":"✏️ 직접 편집"}</button>
-            <button onClick={()=>{navigator.clipboard.writeText(blog);alert("복사됐습니다!");}} style={btn({flex:1,padding:"10px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>📋 전체 복사</button>
-            <button onClick={()=>setBlog("")} style={btn({padding:"10px 16px",borderRadius:8,border:"2px solid #ddd",background:"#fff",color:C.muted,fontSize:13})}>🔄 다시 생성</button>
+            <button onClick={()=>setEditing(!editing)} style={btn({padding:"10px 16px",borderRadius:8,border:"2px solid "+C.blue,background:"#fff",color:C.blue,fontSize:13,fontWeight:600})}>{editing?"편집 완료":"직접 편집"}</button>
+            <button onClick={()=>{navigator.clipboard.writeText(blog);alert("본문을 복사했습니다.");}} style={btn({flex:1,padding:"10px",borderRadius:8,background:C.navy,color:"#fff",fontSize:13,fontWeight:600})}>전체 복사</button>
+            <button onClick={()=>setBlog("")} style={btn({padding:"10px 16px",borderRadius:8,border:"2px solid #ddd",background:"#fff",color:C.muted,fontSize:13})}>다시 생성</button>
           </div>
         </>
       )}
@@ -497,7 +498,8 @@ ${plan.excluded?.slice(0,2).map(v=>`• ${v}`).join("\n")}
 
   return (
     <Card>
-      <SectionTitle>KAKAO — 카카오채널 메시지</SectionTitle>
+      <SectionTitle>카카오 채널 문구</SectionTitle>
+      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>카카오 채널 발송 전용 문구입니다. 연락처와 실제 판매 조건을 입력한 뒤 사용하세요.</p>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:20}}>
         <div>
           <div style={{fontSize:12,color:C.muted,marginBottom:10,fontWeight:600}}>카카오채널 미리보기</div>
@@ -532,7 +534,7 @@ ${plan.excluded?.slice(0,2).map(v=>`• ${v}`).join("\n")}
           <div style={{fontSize:12,color:C.muted,marginBottom:10,fontWeight:600}}>전송 텍스트</div>
           <div style={{background:C.gray,borderRadius:10,padding:16,fontSize:12,lineHeight:1.8,color:C.text,whiteSpace:"pre-wrap",marginBottom:12,minHeight:220,maxHeight:300,overflowY:"auto"}}>{msg}</div>
           <button onClick={copy} style={btn({width:"100%",padding:"12px",borderRadius:8,background:copied?"#2d9f6a":"#ffe812",color:copied?"#fff":"#111",fontSize:14,fontWeight:700})}>
-            {copied?"✅ 복사됐습니다!":"📋 카카오 메시지 복사"}
+            {copied?"복사했습니다":"카카오 메시지 복사"}
           </button>
         </div>
       </div>
