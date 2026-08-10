@@ -23,10 +23,12 @@ const REGION_PRICE = {
 };
 
 const C = {
-  navy:"#1a3a5c", blue:"#2d6a9f", amber:"#e8a020",
-  bg:"#f0ede8", white:"#ffffff", gray:"#f4f2ef",
-  text:"#2c2c2c", muted:"#666", light:"#aaa",
-  green:"#2d9f6a", red:"#e05050", purple:"#7c5cbf"
+  // 공통 토큰만 교체해 화면마다 다른 "템플릿" 느낌이 나지 않게 한다.
+  // 기능별 색은 상태를 구분할 때에만 사용하고, 기본 위계는 중립색+브랜드 블루로 유지한다.
+  navy:"#191f28", blue:"#3182f6", amber:"#f59f00",
+  bg:"#f7f8fa", white:"#ffffff", gray:"#f2f4f6",
+  text:"#191f28", muted:"#6b7684", light:"#8b95a1",
+  green:"#12b886", red:"#f04452", purple:"#7b61ff"
 };
 
 // ── 유틸 ──
