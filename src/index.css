@@ -35,4 +35,5 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 640px) {
   body { font-size: 15px; }
+  .tourplanit-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
 }
