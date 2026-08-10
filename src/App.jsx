@@ -57,6 +57,23 @@ function getShareUrl(plan) {
   const encoded = encodePlan(plan);
   return `${window.location.origin}/?share=${encoded}`;
 }
+function getPlanChecks(plan) {
+  const checks = [];
+  const schedule = Array.isArray(plan.schedule) ? plan.schedule : [];
+  const text = schedule.map((day) => `${day.morning || ""} ${day.afternoon || ""} ${day.evening || ""}`).join(" ");
+  if (!schedule.length) checks.push({ level: "warn", label: "일정 미입력", detail: "Day별 일정이 아직 없습니다." });
+  if (plan.duration !== "당일치기" && !/숙소|호텔|리조트|펜션|체크인|숙박/.test(text)) {
+    checks.push({ level: "warn", label: "숙박 확인", detail: "숙박 상품인데 숙소·체크인 정보가 일정에 보이지 않습니다." });
+  }
+  if (!/식사|조식|중식|석식|점심|저녁|맛집/.test(text)) {
+    checks.push({ level: "info", label: "식사 계획 확인", detail: "식사 포함 여부와 식당 운영시간을 확인하세요." });
+  }
+  if (!/이동|출발|도착|버스|차량|도보|탑승/.test(text)) {
+    checks.push({ level: "info", label: "이동 계획 확인", detail: "집결·이동수단·소요시간을 운영 전 확정하세요." });
+  }
+  if (plan.ktoSource !== "kto") checks.push({ level: "info", label: "관광 데이터 재확인", detail: "현재는 기본 데이터 초안입니다. 최종 제출 전 관광공사 데이터로 다시 확인하세요." });
+  return checks;
+}
 
 const btn = (s={}) => ({border:"none",cursor:"pointer",fontFamily:"inherit",transition:"all .15s",...s});
 const chip = (label,active,color,onClick) => (
@@ -539,6 +556,15 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
     const txt = `TourPlanit 기획서\n상품명: ${plan.productName}\n슬로건: ${plan.slogan}\n\n컨셉\n${plan.concept}\n\n일정\n${plan.schedule.map(d=>`[${d.day}]\n오전: ${d.morning}\n오후: ${d.afternoon}\n저녁: ${d.evening}\n팁: ${d.tip}`).join("\n\n")}\n\n핵심포인트\n${plan.highlights?.map((h,i)=>`${i+1}. ${h}`).join("\n")}\n\n포함: ${plan.included?.join(" / ")}\n불포함: ${plan.excluded?.join(" / ")}\n\n예상가격: ${plan.estimatedPrice}\n\n생성: ${new Date(plan.createdAt).toLocaleString("ko-KR")} | TourPlanit`;
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt],{type:"text/plain;charset=utf-8"})); a.download = `${plan.productName}_기획서.txt`; a.click();
   };
+  const downloadBackup = () => {
+    const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${plan.productName}_TourPlanit_백업.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  const checks = getPlanChecks(plan);
 
   return (
     <div>
@@ -556,10 +582,12 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <button onClick={downloadTxt} style={btn({padding:"9px 14px",background:C.navy,color:"#fff",borderRadius:8,fontSize:12,fontWeight:600})}>텍스트 내보내기</button>
+          <button onClick={downloadBackup} style={btn({padding:"9px 14px",border:"1px solid #d8e1ec",background:"#fff",color:C.navy,borderRadius:8,fontSize:12,fontWeight:600})}>백업 파일</button>
           <button onClick={async()=>{
   const shareBtn = document.activeElement;
   const origText = "공유 링크 복사";
   try {
+    if (!window.confirm("공유 링크에는 현재 기획서 내용이 포함됩니다. 고객 개인정보나 계약·원가 정보가 없는 초안만 공유하시겠습니까?")) return;
     const url = getShareUrl(plan);
     await navigator.clipboard.writeText(url);
     shareBtn.textContent = "✅ 복사됨!";
@@ -583,6 +611,13 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
 
       {tab==="overview" && (
         <>
+          <div style={{background:"#fffaf0",border:"1px solid #f3d995",borderRadius:12,padding:"14px 16px",marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:checks.length?10:0,flexWrap:"wrap"}}>
+              <strong style={{fontSize:13,color:"#7a5700"}}>제출 전 운영 점검</strong>
+              <span style={{fontSize:11,color:"#8c6200"}}>자동 수정하지 않으며, 최종 판단은 기획자가 합니다.</span>
+            </div>
+            {checks.length ? checks.map((check, index)=><div key={index} style={{fontSize:12,color:check.level==="warn"?"#a64b00":"#6b5a2a",lineHeight:1.65,marginTop:6}}><strong>{check.label}</strong> · {check.detail}</div>) : <div style={{fontSize:12,color:"#55713e"}}>기본 일정 항목이 입력되어 있습니다. 실제 운영 가능 여부와 최신 정보만 확인하세요.</div>}
+          </div>
           <Card style={{borderLeft:`4px solid ${C.blue}`}}>
             <SectionTitle>상품 컨셉</SectionTitle>
             <EditableText field="concept" value={plan.concept} style={{fontSize:14,color:C.text,lineHeight:1.8}} multiline/>
@@ -641,9 +676,9 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             ))}
           </Card>
           <div style={{background:C.navy,borderRadius:14,padding:24,textAlign:"center",color:"#fff",marginBottom:16}}>
-            <div style={{fontSize:11,color:"#b9d9f5",marginBottom:6,fontWeight:700,letterSpacing:0.7}}>예상 판매가</div>
+            <div style={{fontSize:11,color:"#b9d9f5",marginBottom:6,fontWeight:700,letterSpacing:0.7}}>참고 예산 범위</div>
             <div style={{fontSize:30,fontWeight:700,color:C.amber}}>{plan.estimatedPrice}</div>
-            <div style={{fontSize:12,color:"#b9d9f5",marginTop:8}}>초안 기준입니다. 실제 원가와 인원을 확인해 조정하세요.</div>
+            <div style={{fontSize:12,color:"#b9d9f5",marginTop:8}}>지역 평균 단가 기반의 초안입니다. 실제 원가·인원·협력사 조건으로 확정하세요.</div>
           </div>
           {editingField && <div style={{position:"fixed",bottom:24,right:24,background:C.blue,color:"#fff",padding:"8px 16px",borderRadius:8,fontSize:12,boxShadow:"0 4px 12px rgba(0,0,0,0.2)"}}>✏️ 편집 중 — 클릭 후 다른 곳 클릭하면 저장</div>}
           <div style={{background:"#f0f7ff",border:"1.5px solid #b3d4f5",borderRadius:12,padding:"14px 18px",marginBottom:12}}>
