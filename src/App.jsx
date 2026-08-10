@@ -937,28 +937,26 @@ export default function App() {
 
       {page==="form" && (
         <div style={wrap}>
-          <h2 style={{fontSize:20,fontWeight:700,color:C.navy,marginBottom:6}}>여행 조건 입력</h2>
-          <p style={{color:C.muted,marginBottom:28,fontSize:13}}>조건을 입력하면 한국관광공사 데이터 기반으로 맞춤 상품을 기획해드립니다.</p>
-          {[{label:"지역 선택",key:"region",options:REGIONS,color:C.blue},{label:"여행 기간",key:"duration",options:DURATIONS,color:C.blue},{label:"여행 테마",key:"theme",options:THEMES,color:C.amber},{label:"타깃 고객",key:"target",options:TARGETS,color:C.amber}].map(({label,key,options,color})=>(
-            <div key={key} style={{marginBottom:24}}>
-              <label style={{fontSize:13,fontWeight:700,color:C.text,display:"block",marginBottom:10}}>{label} <span style={{color:C.red}}>*</span></label>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>{options.map(opt=>chip(opt,form[key]===opt,color,()=>setForm({...form,[key]:opt})))}</div>
+          <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"end",marginBottom:24,flexWrap:"wrap"}}>
+            <div><div style={{fontSize:11,color:C.blue,fontWeight:750,letterSpacing:1.2,marginBottom:8}}>NEW PRODUCT BRIEF</div><h2 style={{fontSize:26,fontWeight:750,color:C.navy,margin:"0 0 7px",letterSpacing:-.7}}>새 상품 기획</h2><p style={{color:C.muted,margin:0,fontSize:13,lineHeight:1.6}}>필수 조건부터 정리하세요. 생성된 초안은 이후 화면에서 직접 수정할 수 있습니다.</p></div>
+            <div style={{fontSize:12,color:C.muted,background:C.white,border:"1px solid #e5e8ed",borderRadius:20,padding:"8px 12px"}}>필수 항목 4개</div>
+          </div>
+          <div style={{background:C.white,border:"1px solid #e5e8ed",borderRadius:16,padding:"24px",boxShadow:"0 1px 3px rgba(25,31,40,.03)"}}>
+            {[{label:"여행 지역",hint:"어느 지역을 중심으로 상품을 만들까요?",key:"region",options:REGIONS,color:C.blue},{label:"여행 기간",hint:"대표 일정의 길이를 선택하세요.",key:"duration",options:DURATIONS,color:C.blue},{label:"여행 테마",hint:"관광지와 문구를 정하는 기준이 됩니다.",key:"theme",options:THEMES,color:C.navy},{label:"주요 고객",hint:"가장 먼저 설득할 고객을 정하세요.",key:"target",options:TARGETS,color:C.navy}].map(({label,hint,key,options,color},index)=>(
+              <div key={key} style={{paddingBottom:index<3?24:0,marginBottom:index<3?24:0,borderBottom:index<3?"1px solid #edf0f3":"none"}}>
+                <div style={{display:"flex",gap:10,alignItems:"baseline",marginBottom:12}}><label style={{fontSize:14,fontWeight:750,color:C.text}}>{label} <span style={{color:C.red}}>*</span></label><span style={{fontSize:12,color:C.muted}}>{hint}</span></div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>{options.map(opt=>chip(opt,form[key]===opt,color,()=>setForm({...form,[key]:opt})))}</div>
+              </div>
+            ))}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:16,paddingTop:24,marginTop:24,borderTop:"1px solid #edf0f3"}}>
+              <div><label style={{fontSize:14,fontWeight:750,color:C.text,display:"block",marginBottom:8}}>예산대 <span style={{fontSize:12,color:C.muted,fontWeight:400}}>선택</span></label><input value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} placeholder="예: 1인 20만원대"
+                style={{width:"100%",padding:"12px 14px",borderRadius:9,border:"1px solid #dfe4ea",fontSize:13,outline:"none",background:C.white}}/></div>
+              <div><label style={{fontSize:14,fontWeight:750,color:C.text,display:"block",marginBottom:8}}>운영 조건 <span style={{fontSize:12,color:C.muted,fontWeight:400}}>선택</span></label><textarea value={form.special} onChange={e=>setForm({...form,special:e.target.value})} placeholder="예: 노쇼핑, 노약자 포함" rows={2}
+                style={{width:"100%",padding:"12px 14px",borderRadius:9,border:"1px solid #dfe4ea",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box",background:C.white}}/></div>
             </div>
-          ))}
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:13,fontWeight:700,color:C.text,display:"block",marginBottom:8}}>예산대 <span style={{fontSize:12,color:C.muted,fontWeight:400}}>(선택)</span></label>
-            <input value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} placeholder="예) 1인 20만원대, 단체 100만원 이하"
-              style={{width:"100%",padding:"12px 16px",borderRadius:8,border:"2px solid #e0ddd8",fontSize:13,outline:"none",boxSizing:"border-box",background:C.white}}/>
           </div>
-          <div style={{marginBottom:32}}>
-            <label style={{fontSize:13,fontWeight:700,color:C.text,display:"block",marginBottom:8}}>특이사항 <span style={{fontSize:12,color:C.muted,fontWeight:400}}>(선택)</span></label>
-            <textarea value={form.special} onChange={e=>setForm({...form,special:e.target.value})} placeholder="예) 노쇼핑 원칙, 노약자 포함, 외국인 동반 등" rows={3}
-              style={{width:"100%",padding:"12px 16px",borderRadius:8,border:"2px solid #e0ddd8",fontSize:13,outline:"none",resize:"none",boxSizing:"border-box",background:C.white}}/>
-          </div>
-          <button onClick={handleGenerate} disabled={!form.region||!form.duration||!form.theme||!form.target||loading}
-            style={btn({width:"100%",padding:"16px",borderRadius:10,fontSize:15,fontWeight:700,background:loading||!form.region||!form.duration||!form.theme||!form.target?"#ccc":C.navy,color:"#fff",boxShadow:loading?"none":"0 4px 12px rgba(26,58,92,0.3)"})}>
-            {loading?`⏳ ${loadingMsg}`:"✨ 기획서 자동 생성"}
-          </button>
+          <div style={{display:"flex",justifyContent:"space-between",gap:16,alignItems:"center",background:"#eef4ff",border:"1px solid #d9e7ff",borderRadius:12,padding:"14px 16px",marginTop:16,flexWrap:"wrap"}}><span style={{fontSize:12,color:C.muted}}>AI는 초안을 생성합니다. 장소·가격·운영 조건은 저장 전 확인하세요.</span><button onClick={handleGenerate} disabled={!form.region||!form.duration||!form.theme||!form.target||loading}
+            style={btn({padding:"13px 20px",borderRadius:9,fontSize:14,fontWeight:750,background:loading||!form.region||!form.duration||!form.theme||!form.target?"#b8c0cc":C.blue,color:"#fff",boxShadow:"none"})}>{loading?loadingMsg:"기획 초안 만들기 →"}</button></div>
         </div>
       )}
 
