@@ -55,11 +55,17 @@ exports.handler = async (event) => {
     const start = text.indexOf("{");
     const end = text.lastIndexOf("}");
     if (start < 0 || end < start) return json(422, { error: "AI 응답 형식을 읽지 못했습니다. 다시 시도하세요." });
-    return json(200, { plan: JSON.parse(text.slice(start, end + 1)) });
+    try {
+      return json(200, { plan: JSON.parse(text.slice(start, end + 1)) });
+    } catch (error) {
+      console.error("[ai-draft] invalid plan JSON", error?.message || "unknown parse error");
+      return json(422, { error: "AI 초안 형식이 올바르지 않아 다시 생성이 필요합니다. 다시 시도해주세요." });
+    }
   } catch (error) {
     if (error?.name === "AbortError") {
       return json(504, { error: "AI 응답 시간이 길어 초안 생성을 중단했습니다. 잠시 후 다시 시도해주세요." });
     }
+    console.error("[ai-draft] unexpected error", error?.message || "unknown error");
     return json(500, { error: "AI 초안 생성 중 오류가 발생했습니다. 다시 시도해주세요." });
   }
 };
