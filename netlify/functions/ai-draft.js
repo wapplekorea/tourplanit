@@ -4,13 +4,18 @@ const json = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
+// Netlify Functions has a short execution window.  The draft must be concise
+// enough to return reliably; the model can still be overridden per environment.
+const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+const AI_TIMEOUT_MS = 24_000;
+
 function planPrompt({ form, spots, dayCount }) {
   const schedule = Array.from({ length: dayCount }, (_, index) =>
     `{"day":"Day ${index + 1}","morning":"구체적 오전 일정","afternoon":"구체적 오후 일정","evening":"구체적 저녁 일정","tip":"실무 운영 팁"}`,
   ).join(",");
   return `다음 JSON 형식만 반환하세요. 다른 설명이나 마크다운은 쓰지 마세요.
 조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget || "중간"}, 운영조건=${form.special || "없음"}, 관광지=${spots}
-규칙: 일정은 정확히 ${dayCount}일, 확인되지 않은 가격·영업시간·예약 가능 여부를 사실처럼 단정하지 말 것. 모든 문자열은 한 줄.
+규칙: 일정은 정확히 ${dayCount}일, 각 일정 칸은 한 문장으로 간결하게 작성할 것. 확인되지 않은 가격·영업시간·예약 가능 여부를 사실처럼 단정하지 말 것. 모든 문자열은 한 줄.
 {"productName":"상품명","slogan":"슬로건","concept":"컨셉 설명","schedule":[${schedule}],"highlights":["핵심 1","핵심 2","핵심 3"],"included":["포함 1","포함 2","포함 3","포함 4"],"excluded":["불포함 1","불포함 2","불포함 3"],"targetDesc":"타깃 설명","estimatedPrice":"1인 예상 가격대","instagram":"인스타 문구","blog":"블로그 소개","kakao":"카카오 홍보 문구"}`;
 }
 
@@ -26,12 +31,24 @@ exports.handler = async (event) => {
   try {
     const payload = JSON.parse(event.body || "{}");
     const prompt = payload.kind === "blog" ? blogPrompt(payload.plan || {}) : planPrompt(payload);
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: payload.kind === "blog" ? 2800 : 4000, messages: [{ role: "user", content: prompt }] }),
-    });
-    const data = await response.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          max_tokens: payload.kind === "blog" ? 1600 : 1400,
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) return json(response.status, { error: data?.error?.message || "AI API 요청에 실패했습니다." });
     const text = data?.content?.[0]?.text?.trim() || "";
     if (payload.kind === "blog") return json(200, { text });
@@ -40,6 +57,9 @@ exports.handler = async (event) => {
     if (start < 0 || end < start) return json(422, { error: "AI 응답 형식을 읽지 못했습니다. 다시 시도하세요." });
     return json(200, { plan: JSON.parse(text.slice(start, end + 1)) });
   } catch (error) {
-    return json(500, { error: error.message || "AI 초안 생성 중 오류가 발생했습니다." });
+    if (error?.name === "AbortError") {
+      return json(504, { error: "AI 응답 시간이 길어 초안 생성을 중단했습니다. 잠시 후 다시 시도해주세요." });
+    }
+    return json(500, { error: "AI 초안 생성 중 오류가 발생했습니다. 다시 시도해주세요." });
   }
 };
