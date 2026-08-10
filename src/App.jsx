@@ -6,12 +6,9 @@ const THEMES = ["자연/힐링","문화/역사","액티비티","미식","쇼핑"
 const DURATIONS = ["당일치기","1박 2일","2박 3일","3박 4일 이상"];
 const TARGETS = ["가족","커플/연인","친구","단체/기업","혼자"];
 
-const KTO_KEY = import.meta.env.VITE_KTO_API_KEY || "";
-const JSONBIN_KEY = import.meta.env.VITE_JSONBIN_API_KEY || "";
-const JSONBIN_BIN_URL = "https://api.jsonbin.io/v3/b";
-const CLAUDE_KEY = import.meta.env.VITE_CLAUDE_API_KEY || "";
 const STORAGE_KEY = "tourplanit_v3";
 const BASE = import.meta.env.BASE_URL || "/";
+const FUNCTION_BASE = "/.netlify/functions";
 
 // 지역별 단가 (원)
 const REGION_PRICE = {
@@ -46,30 +43,15 @@ function encodePlan(plan) {
 function decodePlan(str) {
   try { return JSON.parse(decodeURIComponent(atob(str))); } catch { return null; }
 }
-async function savePlanToCloud(plan) {
-  try {
-    const res = await fetch(JSONBIN_BIN_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": JSONBIN_KEY,
-        "X-Bin-Name": plan.productName?.slice(0,30) || "TourPlanit",
-        "X-Bin-Private": "false"
-      },
-      body: JSON.stringify(plan)
-    });
-    const data = await res.json();
-    return data?.metadata?.id || null;
-  } catch { return null; }
-}
-async function loadPlanFromCloud(binId) {
-  try {
-    const res = await fetch(`${JSONBIN_BIN_URL}/${binId}/latest`, {
-      headers: { "X-Master-Key": JSONBIN_KEY }
-    });
-    const data = await res.json();
-    return data?.record || null;
-  } catch { return null; }
+async function requestAiDraft(kind, payload) {
+  const res = await fetch(`${FUNCTION_BASE}/ai-draft`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind, ...payload }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "AI 초안을 만들지 못했습니다.");
+  return data;
 }
 function getShareUrl(plan) {
   const encoded = encodePlan(plan);
@@ -409,32 +391,8 @@ function BlogContent({plan}) {
   const generate = async () => {
     setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2500,
-          messages:[{role:"user",content:`네이버 블로그 포스트를 1500자 이상으로 작성해줘.
-
-상품: ${plan.productName}
-슬로건: ${plan.slogan}
-지역: ${plan.region} | 기간: ${plan.duration} | 테마: ${plan.theme} | 타깃: ${plan.target}
-컨셉: ${plan.concept}
-일정: ${plan.schedule.map(d=>`${d.day}: 오전-${d.morning}, 오후-${d.afternoon}, 저녁-${d.evening}`).join(" / ")}
-핵심: ${plan.highlights?.join(", ")}
-가격: ${plan.estimatedPrice}
-
-요구사항:
-- 1500자 이상 (공백 포함)
-- 감성적이고 여행 욕구를 자극하는 구어체
-- 소제목 3개 (## 형식으로)
-- 각 소제목 아래 300자 이상 본문
-- 실제 장소명, 음식, 액티비티 구체적으로 언급
-- 마지막에 예약/문의 유도 CTA
-- 해시태그 15개 이상 마지막에 포함
-- 마크다운 없이 순수 텍스트만`}]})
-      });
-      const d = await res.json();
-      setBlog(d.content[0].text);
+      const data = await requestAiDraft("blog", { plan });
+      setBlog(data.text);
     } catch(e) { alert("오류: "+e.message); }
     finally { setLoading(false); }
   };
@@ -766,7 +724,7 @@ export default function App() {
     try {
       const areaCode = REGION_CODES[form.region] || "1";
       const res = await fetch(
-        `/api/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
+        `${FUNCTION_BASE}/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
       );
       if (!res.ok) throw new Error("proxy error");
       const data = await res.json();
@@ -792,37 +750,8 @@ export default function App() {
       const { spotsStr, spotsArray, source } = await fetchSpots();
       setLoadingMsg("AI 기획서 생성 중...");
       const dayCount = form.duration==="당일치기"?1:form.duration==="1박 2일"?2:form.duration==="2박 3일"?3:4;
-      const schedEx = Array.from({length:dayCount},(_,i)=>`{"day":"Day ${i+1}","morning":"구체적오전일정","afternoon":"구체적오후일정","evening":"구체적저녁일정","tip":"실용적팁"}`).join(",");
-      const prompt = `다음 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 쓰지 마세요.
-
-조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget||"중간"}, 관광지=${spotsStr}
-
-중요규칙:
-1. JSON 외 아무것도 출력하지 마세요
-2. 모든 문자열값은 한 줄로 작성 (줄바꿈 금지)
-3. 특수문자 사용 금지 (따옴표, 역슬래시 등)
-4. instagram/blog/kakao 값은 50자 이내로 짧게
-5. schedule은 정확히 ${dayCount}개
-
-{"productName":"상품명","slogan":"슬로건","concept":"컨셉설명","schedule":[${schedEx}],"highlights":["핵심1","핵심2","핵심3"],"included":["포함1","포함2","포함3","포함4"],"excluded":["불포함1","불포함2","불포함3"],"targetDesc":"타깃설명","estimatedPrice":"1인 XX만원대","instagram":"인스타카피 해시태그포함","blog":"블로그소개","kakao":"카카오홍보문구"}`;
-
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":CLAUDE_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4000,messages:[{role:"user",content:prompt}]})
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message||"API 오류");
-      const text = data.content[0].text.trim();
-      const s=text.indexOf("{"),e=text.lastIndexOf("}");
-      let plan;
-      try {
-        plan = JSON.parse(text.slice(s,e+1));
-      } catch {
-        // 줄바꿈·탭 제거 후 재시도
-        const cleaned = text.slice(s,e+1).replace(/[\r\n\t]+/g," ").replace(/,\s*}/g,"}").replace(/,\s*]/g,"]");
-        plan = JSON.parse(cleaned);
-      }
+      const data = await requestAiDraft("plan", { form, spots: spotsStr, dayCount });
+      const plan = data.plan;
       plan.region=form.region; plan.duration=form.duration; plan.theme=form.theme; plan.target=form.target;
       plan.ktoSpots=spotsArray; plan.ktoSource=source;
       const saved = saveToHistory(plan);

@@ -16,7 +16,7 @@ exports.handler = async (event) => {
     const { areaCode = "1", contentTypeId = "12", numOfRows = "20" } =
       event.queryStringParameters || {};
 
-    const apiKey = process.env.VITE_KTO_API_KEY || "";
+    const apiKey = process.env.KTO_API_KEY || "";
     if (!apiKey) {
       return {
         statusCode: 500,
