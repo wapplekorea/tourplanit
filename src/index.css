@@ -36,4 +36,13 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 640px) {
   body { font-size: 15px; }
   .tourplanit-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .tourplanit-nav { height: auto !important; min-height: 56px; padding: 8px 16px !important; gap: 10px; }
+  .tourplanit-brand { min-width: 0; }
+  .tourplanit-brand-title { font-size: 17px !important; white-space: nowrap; }
+  .tourplanit-brand-sub { display: none; }
+  .tourplanit-nav-actions { margin-left: auto; flex-shrink: 0; }
+  .tourplanit-nav-action { padding: 7px 8px !important; font-size: 12px !important; white-space: nowrap; }
+  .tourplanit-hero { padding: 48px 20px 42px !important; }
+  .tourplanit-hero-title { font-size: 31px !important; line-height: 1.3 !important; letter-spacing: -1px !important; word-break: keep-all; }
+  .tourplanit-desktop-break { display: none; }
 }

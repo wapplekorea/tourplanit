@@ -838,14 +838,14 @@ export default function App() {
   };
 
   const Nav = () => (
-    <header style={{background:C.navy,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
-      <div onClick={()=>setPage("home")} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-        <span style={{fontSize:18,color:"#fff",fontWeight:700,letterSpacing:-0.5}}>🗺️ TourPlanit</span>
-        <span style={{fontSize:10,color:"#7eb8d4",background:"rgba(255,255,255,0.12)",padding:"2px 8px",borderRadius:20,letterSpacing:0.5}}>투어플래닛</span>
+    <header className="tourplanit-nav" style={{background:C.navy,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>
+      <div className="tourplanit-brand" onClick={()=>setPage("home")} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+        <span className="tourplanit-brand-title" style={{fontSize:18,color:"#fff",fontWeight:700,letterSpacing:-0.5}}>TourPlanit</span>
+        <span className="tourplanit-brand-sub" style={{fontSize:10,color:"#7eb8d4",background:"rgba(255,255,255,0.12)",padding:"2px 8px",borderRadius:20,letterSpacing:0.5}}>투어플래닛</span>
       </div>
-      <div style={{display:"flex",gap:2}}>
+      <div className="tourplanit-nav-actions" style={{display:"flex",gap:2}}>
         {[["새 기획서","form"],["기획서 목록","history"]].map(([label,pg])=>(
-          <button key={pg} onClick={()=>setPage(pg)} style={btn({padding:"7px 14px",borderRadius:6,background:page===pg?"rgba(255,255,255,0.18)":"transparent",color:page===pg?"#fff":"#7eb8d4",fontSize:13,fontWeight:page===pg?600:400})}>
+          <button className="tourplanit-nav-action" key={pg} onClick={()=>setPage(pg)} style={btn({padding:"7px 14px",borderRadius:6,background:page===pg?"rgba(255,255,255,0.18)":"transparent",color:page===pg?"#fff":"#7eb8d4",fontSize:13,fontWeight:page===pg?600:400})}>
             {label}
           </button>
         ))}
@@ -881,11 +881,11 @@ export default function App() {
       {page==="home" && (
         <>
           {/* 제품 진입점: 소개보다 바로 기획을 시작하고, 근거와 결과를 이해하게 한다. */}
-          <div style={{background:`linear-gradient(135deg,${C.navy} 0%,#253a58 55%,${C.blue} 150%)`,padding:"72px 20px 64px",color:"#fff"}}>
+          <div className="tourplanit-hero" style={{background:`linear-gradient(135deg,${C.navy} 0%,#253a58 55%,${C.blue} 150%)`,padding:"72px 20px 64px",color:"#fff"}}>
             <div className="tourplanit-hero-grid" style={{maxWidth:880,margin:"0 auto",display:"grid",gridTemplateColumns:"minmax(0,1.25fr) minmax(260px,.75fr)",gap:32,alignItems:"end"}}>
               <div>
                 <div style={{fontSize:11,fontWeight:700,letterSpacing:1.5,color:"#b9d7ff",marginBottom:18}}>TOUR PRODUCT PLANNING WORKSPACE</div>
-                <h1 style={{fontSize:40,fontWeight:750,margin:"0 0 16px",lineHeight:1.2,letterSpacing:-1.4}}>근거 있는 여행상품을<br/>빠르게 기획하세요.</h1>
+                <h1 className="tourplanit-hero-title" style={{fontSize:40,fontWeight:750,margin:"0 0 16px",lineHeight:1.2,letterSpacing:-1.4}}>근거 있는 여행상품을<br className="tourplanit-desktop-break"/> 빠르게 기획하세요.</h1>
                 <p style={{fontSize:16,color:"rgba(255,255,255,.74)",margin:"0 0 30px",lineHeight:1.7}}>지역·기간·타깃을 정하면 관광 데이터와 AI 초안을 바탕으로 일정, 견적, 홍보 문구를 한 작업 공간에서 정리합니다.</p>
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                   <button onClick={()=>setPage("form")} style={btn({padding:"14px 24px",background:"#fff",color:C.navy,borderRadius:10,fontSize:15,fontWeight:750,boxShadow:"0 8px 24px rgba(0,0,0,.16)"})}>새 상품 기획하기 →</button>
