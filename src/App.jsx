@@ -260,7 +260,10 @@ function ScheduleDoc({plan}) {
             </div>
           </div>
         </div>
-        <p style={{fontSize:10,color:C.light,marginTop:16,textAlign:"right"}}>생성: {new Date(plan.createdAt).toLocaleDateString("ko-KR")} | TourPlanit (한국관광공사 OpenAPI 기반)</p>
+        <p style={{fontSize:10,color:C.light,marginTop:16,textAlign:"right"}}>
+          생성: {new Date(plan.createdAt).toLocaleDateString("ko-KR")} | TourPlanit
+          {plan.ktoSource === "kto" ? " · 한국관광공사 OpenAPI 데이터 참고" : " · 기본 관광지 초안"}
+        </p>
       </div>
 
       <div style={{display:"flex",gap:8,marginTop:16}}>
@@ -691,7 +694,17 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             </div>
             {plan.ktoSpots && plan.ktoSpots.length > 0 ? (
               <>
-                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>관광공사 지역 기반 관광지 {plan.ktoSpots.length}개를 기획 초안에 참고했습니다.</div>
+                <div style={{fontSize:11,color:"#5580a8",marginBottom:6}}>
+                  {plan.ktoSource === "kto"
+                    ? `한국관광공사 지역 기반 관광지 ${plan.ktoSpots.length}개를 AI 기획 초안에 참고했습니다.`
+                    : `${plan.region} 지역 기본 관광지 초안을 사용했습니다. 관광공사 데이터로 재확인하세요.`}
+                </div>
+                {plan.ktoSource === "kto" && plan.ktoMeta && (
+                  <div style={{fontSize:10,color:"#6b88a7",marginBottom:8,lineHeight:1.5}}>
+                    출처: {plan.ktoMeta.provider} 관광정보 OpenAPI · {plan.ktoMeta.api} · 지역 코드 {plan.ktoMeta.areaCode}
+                    {plan.ktoMeta.collectedAt ? ` · 조회 ${new Date(plan.ktoMeta.collectedAt).toLocaleString("ko-KR")}` : ""}
+                  </div>
+                )}
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {plan.ktoSpots.slice(0,12).map((s,i)=>(
                     <span key={i} style={{fontSize:11,background:"#fff",border:"1px solid #b3d4f5",borderRadius:6,padding:"3px 9px",color:"#1a5fa8"}}>{s.title}</span>
@@ -700,7 +713,7 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
                 </div>
               </>
             ) : (
-              <div style={{fontSize:12,color:"#5580a8"}}>{plan.region} 지역 기본 데이터 적용</div>
+              <div style={{fontSize:12,color:"#5580a8"}}>{plan.region} 지역 기본 데이터 적용 · 관광공사 데이터 재확인 필요</div>
             )}
           </div>
           <p style={{textAlign:"center",fontSize:11,color:C.light}}>관광 데이터는 참고 근거이며, 운영 가능 여부와 최신 정보는 담당자가 확인합니다.</p>
@@ -768,13 +781,14 @@ export default function App() {
           spotsStr: data.spots.map((s) => s.title).join(", "),
           spotsArray: data.spots,
           source: "kto",
+          meta: data.source || null,
         };
       }
       throw new Error("no spots");
     } catch {
       // KTO API 실패 시 폴백
       const fallback = fallbackMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
-      return { spotsStr: fallback, spotsArray: [], source: "fallback" };
+      return { spotsStr: fallback, spotsArray: [], source: "fallback", meta: null };
     }
   };
 
@@ -782,13 +796,13 @@ export default function App() {
     setLoading(true);
     try {
       setLoadingMsg("관광공사 데이터 수집 중...");
-      const { spotsStr, spotsArray, source } = await fetchSpots();
+      const { spotsStr, spotsArray, source, meta } = await fetchSpots();
       setLoadingMsg("AI 기획서 생성 중...");
       const dayCount = form.duration==="당일치기"?1:form.duration==="1박 2일"?2:form.duration==="2박 3일"?3:4;
       const data = await requestAiDraft("plan", { form, spots: spotsStr, dayCount });
       const plan = data.plan;
       plan.region=form.region; plan.duration=form.duration; plan.theme=form.theme; plan.target=form.target;
-      plan.ktoSpots=spotsArray; plan.ktoSource=source;
+      plan.ktoSpots=spotsArray; plan.ktoSource=source; plan.ktoMeta=meta;
       const saved = saveToHistory(plan);
       refresh(); setDetailItem(saved); setPage("detail");
     } catch(e) { alert("오류: "+e.message+"\n다시 시도해주세요."); }

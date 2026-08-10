@@ -63,7 +63,18 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ spots }),
+      // API 키와 원본 요청 URL은 브라우저로 전달하지 않는다. 제출·검증에 필요한
+      // 데이터 출처만 안전한 메타데이터로 돌려준다.
+      body: JSON.stringify({
+        spots,
+        source: {
+          provider: "한국관광공사",
+          api: "KorService1 / areaBasedList1",
+          areaCode,
+          contentTypeId,
+          collectedAt: new Date().toISOString(),
+        },
+      }),
     };
   } catch (error) {
     return {
