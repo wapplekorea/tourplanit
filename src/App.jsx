@@ -209,6 +209,40 @@ function EstimateCalc({plan}) {
 }
 
 // ── 일정표 ──
+const ITINERARY_SLOTS = [
+  { key:"morning", label:"오전", tone:"#d88d00" },
+  { key:"afternoon", label:"오후", tone:"#3182f6" },
+  { key:"evening", label:"저녁", tone:"#7b61ff" },
+];
+
+function DayTimeline({ day, dense=false }) {
+  return (
+    <section className={"tourplanit-day-timeline" + (dense ? " tourplanit-day-timeline-dense" : "")}>
+      <div className="tourplanit-day-heading">
+        <span>{day.day}</span>
+        <i aria-hidden="true" />
+      </div>
+      <div className="tourplanit-timeline-list">
+        {ITINERARY_SLOTS.map(({key,label,tone}) => (
+          <div className="tourplanit-timeline-row" key={key}>
+            <div className="tourplanit-timeline-label" style={{color:tone}}>
+              <i style={{background:tone}} aria-hidden="true" />
+              {label}
+            </div>
+            <p>{day[key] || "일정 미정"}</p>
+          </div>
+        ))}
+      </div>
+      {day.tip && (
+        <div className="tourplanit-timeline-note">
+          <strong>운영 메모</strong>
+          <span>{day.tip}</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ScheduleDoc({plan}) {
   const printId = "schedule-print";
   return (
@@ -227,25 +261,7 @@ function ScheduleDoc({plan}) {
           </div>
         </div>
 
-        {plan.schedule.map((d,i)=>(
-          <div key={i} style={{marginBottom:28}}>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
-              <div style={{background:C.navy,color:"#fff",padding:"6px 18px",borderRadius:24,fontSize:13,fontWeight:700}}>{d.day}</div>
-              <div style={{flex:1,height:1,background:"#e0ddd8"}}/>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:10}}>
-              {[["🌅 오전",d.morning,"#fff8ee","#e8a020"],["☀️ 오후",d.afternoon,"#f0f5ff","#2d6a9f"],["🌙 저녁",d.evening,"#f5f0ff","#7c5cbf"]].map(([lbl,val,bg,color])=>(
-                <div key={lbl} style={{background:bg,borderRadius:10,padding:"14px 16px",borderTop:`3px solid ${color}`}}>
-                  <div style={{fontSize:11,color,fontWeight:700,marginBottom:6}}>{lbl}</div>
-                  <div style={{fontSize:13,color:C.text,lineHeight:1.6}}>{val}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"#fffbf0",borderRadius:8,padding:"8px 14px",fontSize:12,color:"#c47f00",border:"1px solid #f5e4a0"}}>
-              <strong>운영 메모</strong> · {d.tip}
-            </div>
-          </div>
-        ))}
+        {plan.schedule.map((d,i)=><DayTimeline key={i} day={d} />)}
 
         <div style={{background:C.gray,borderRadius:10,padding:16,marginTop:8}}>
           <div style={{fontSize:12,fontWeight:700,color:C.navy,marginBottom:10}}>포함/불포함 사항</div>
@@ -626,22 +642,9 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
             <EditableText field="concept" value={plan.concept} style={{fontSize:14,color:C.text,lineHeight:1.8}} multiline/>
           </Card>
           <Card>
-            <SectionTitle>일정 초안</SectionTitle>
-            <p style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-6px 0 18px"}}>시간과 이동 동선, 운영 가능 여부를 확인한 뒤 일정표에서 보완하세요.</p>
-            {plan.schedule.map((d,i)=>(
-              <div key={i} style={{marginBottom:i<plan.schedule.length-1?24:0,paddingBottom:i<plan.schedule.length-1?24:0,borderBottom:i<plan.schedule.length-1?"1px solid #f0ede8":"none"}}>
-                <span style={{background:C.navy,color:"#fff",padding:"5px 12px",borderRadius:6,fontSize:12,fontWeight:700,display:"inline-block",marginBottom:12}}>{d.day}</span>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:10}}>
-                  {[["오전","morning","#f8fbff","#3182f6"],["오후","afternoon","#f7fbf8","#12b886"],["저녁","evening","#fbf9ff","#7b61ff"]].map(([lbl,fld,bg,color])=>(
-                    <div key={lbl} style={{background:bg,borderRadius:8,padding:"12px 14px",border:`1px solid ${color}22`,borderTop:`3px solid ${color}`}}>
-                      <div style={{fontSize:11,color,fontWeight:700,marginBottom:6}}>{lbl}</div>
-                      <div style={{fontSize:13,color:C.text,lineHeight:1.5}}>{d[fld]}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{background:"#fffbf0",borderRadius:6,padding:"9px 14px",fontSize:12,color:"#8c6200",border:"1px solid #f5e4a0"}}><strong>운영 메모</strong> · {d.tip}</div>
-              </div>
-            ))}
+            <SectionTitle>일정 요약</SectionTitle>
+            <p style={{fontSize:12,color:C.muted,lineHeight:1.6,margin:"-6px 0 18px"}}>이동·식사·운영 메모를 한 흐름으로 확인한 뒤 일정표에서 세부 내용을 보완하세요.</p>
+            {plan.schedule.map((d,i)=><DayTimeline key={i} day={d} dense />)}
           </Card>
           <Card>
             <SectionTitle>핵심 포인트</SectionTitle>
