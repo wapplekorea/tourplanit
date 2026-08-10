@@ -849,19 +849,22 @@ export default function App() {
   );
 
   const PlanCard = ({plan,onClick,onDelete}) => (
-    <div onClick={onClick} style={{background:C.white,borderRadius:14,padding:20,cursor:"pointer",border:"1px solid #e8e5e0",transition:"all .15s",boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}
-      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.1)";e.currentTarget.style.transform="translateY(-2px)"}}
-      onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.05)";e.currentTarget.style.transform="none"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-        <div style={{flex:1}}>
-          <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>{tag(plan.region,C.blue)} {tag(plan.duration,C.amber)} {tag(plan.theme,C.green)}</div>
-          <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:3}}>{plan.productName}</div>
-          <div style={{fontSize:13,color:C.amber,fontWeight:600,marginBottom:8}}>{plan.slogan}</div>
-          <div style={{fontSize:12,color:C.muted}}>{new Date(plan.createdAt).toLocaleDateString("ko-KR")} · {plan.estimatedPrice}</div>
+    <article onClick={onClick} style={{background:C.white,borderRadius:12,padding:"18px 20px",cursor:"pointer",border:"1px solid #e2e8f0",transition:"all .15s",boxShadow:"0 1px 3px rgba(25,31,40,.04)"}}
+      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 24px rgba(25,31,40,.09)";e.currentTarget.style.borderColor="#b9d7ff"}}
+      onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px rgba(25,31,40,.04)";e.currentTarget.style.borderColor="#e2e8f0"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14}}>
+        <div style={{minWidth:0,flex:1}}>
+          <div style={{display:"flex",gap:5,marginBottom:10,flexWrap:"wrap"}}>{tag(plan.region,C.blue)} {tag(plan.duration,C.amber)} {tag(plan.theme,C.green)}</div>
+          <div style={{fontSize:16,fontWeight:750,letterSpacing:-.25,color:C.navy,marginBottom:5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plan.productName}</div>
+          <div style={{fontSize:13,color:C.muted,marginBottom:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{plan.slogan}</div>
+          <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",fontSize:12,color:C.muted,flexWrap:"wrap"}}><span>작성 {new Date(plan.createdAt).toLocaleDateString("ko-KR")}</span><span style={{fontWeight:700,color:C.text}}>예상 {plan.estimatedPrice}</span></div>
         </div>
-        <button onClick={e=>{e.stopPropagation();if(confirm("삭제?"))onDelete(plan.id);}} style={btn({background:"none",color:"#ccc",fontSize:20,padding:"0 4px",lineHeight:1})}>×</button>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+          <span style={{fontSize:12,fontWeight:700,color:C.blue}}>열기 →</span>
+          <button aria-label="기획서 삭제" onClick={e=>{e.stopPropagation();if(confirm("이 기획서를 삭제할까요?"))onDelete(plan.id);}} style={btn({background:"transparent",border:"1px solid #e5e8ed",borderRadius:6,color:C.light,fontSize:14,padding:"4px 7px",lineHeight:1})}>×</button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 
   const wrap = {maxWidth:880,margin:"0 auto",padding:"24px 16px"};
@@ -939,7 +942,7 @@ export default function App() {
           {/* 하단 CTA */}
           <div style={{background:`linear-gradient(135deg,${C.navy},${C.blue})`,padding:"40px 20px",textAlign:"center",color:"#fff"}}>
             <h2 style={{fontSize:20,fontWeight:700,margin:"0 0 12px"}}>지금 바로 시작해보세요</h2>
-            <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",margin:"0 0 24px"}}>회원가입 없이 무료로 사용 가능</p>
+            <p style={{fontSize:13,color:"rgba(255,255,255,0.65)",margin:"0 0 24px"}}>다음 상품 기획의 조건을 정리하고 초안을 시작하세요.</p>
             <button onClick={()=>setPage("form")} style={btn({padding:"14px 40px",background:C.amber,color:"#fff",borderRadius:10,fontSize:15,fontWeight:700,boxShadow:"0 4px 16px rgba(0,0,0,0.2)"})}>기획 시작하기 →</button>
           </div>
         </>
@@ -972,15 +975,16 @@ export default function App() {
 
       {page==="history" && (
         <div style={wrap}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <h2 style={{fontSize:20,fontWeight:700,color:C.navy,margin:0}}>기획서 목록 <span style={{fontSize:13,color:C.muted,fontWeight:400}}>({history.length}개)</span></h2>
-            <button onClick={()=>setPage("form")} style={btn({padding:"10px 20px",background:C.amber,color:"#fff",borderRadius:8,fontSize:13,fontWeight:600})}>+ 새 기획서</button>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",marginBottom:24,gap:16,flexWrap:"wrap"}}>
+            <div><div style={{fontSize:11,color:C.blue,fontWeight:750,letterSpacing:1.2,marginBottom:8}}>PLANNING ARCHIVE</div><h2 style={{fontSize:26,fontWeight:750,letterSpacing:-.7,color:C.navy,margin:"0 0 6px"}}>저장한 기획서</h2><p style={{fontSize:13,color:C.muted,margin:0}}>초안을 다시 열어 일정, 견적, 홍보 문구를 이어서 검토하세요.</p></div>
+            <button onClick={()=>setPage("form")} style={btn({padding:"11px 18px",background:C.blue,color:"#fff",borderRadius:8,fontSize:13,fontWeight:700})}>새 상품 기획하기 →</button>
           </div>
+          {history.length>0&&<div style={{fontSize:12,color:C.muted,marginBottom:12}}>최근 저장순 · 총 {history.length}개</div>}
           {history.length===0?(
-            <div style={{textAlign:"center",padding:"80px 0",color:C.muted}}>
-              <div style={{fontSize:56,marginBottom:16}}>📋</div>
-              <div style={{fontSize:15,marginBottom:20}}>아직 저장된 기획서가 없어요</div>
-              <button onClick={()=>setPage("form")} style={btn({padding:"13px 32px",background:C.navy,color:"#fff",borderRadius:10,fontSize:14,fontWeight:600})}>첫 기획서 만들기</button>
+            <div style={{textAlign:"center",padding:"72px 20px",color:C.muted,background:C.white,border:"1px dashed #cfd8e3",borderRadius:14}}>
+              <div style={{fontSize:15,fontWeight:700,color:C.navy,marginBottom:8}}>저장한 기획서가 없습니다</div>
+              <div style={{fontSize:13,marginBottom:20}}>지역·기간·고객 조건을 정해 첫 상품 기획을 시작하세요.</div>
+              <button onClick={()=>setPage("form")} style={btn({padding:"13px 24px",background:C.navy,color:"#fff",borderRadius:9,fontSize:14,fontWeight:700})}>첫 상품 기획하기 →</button>
             </div>
           ):(
             <div style={{display:"grid",gap:10}}>
