@@ -9,14 +9,101 @@ const json = (statusCode, body) => ({
 const AI_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 const AI_TIMEOUT_MS = 24_000;
 
+const PLAN_TOOL = {
+  name: "submit_travel_plan",
+  description: "Return a complete travel plan ready for TourPlanit to render.",
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "productName",
+      "slogan",
+      "concept",
+      "schedule",
+      "highlights",
+      "included",
+      "excluded",
+      "targetDesc",
+      "estimatedPrice",
+      "instagram",
+      "blog",
+      "kakao",
+    ],
+    properties: {
+      productName: { type: "string" },
+      slogan: { type: "string" },
+      concept: { type: "string" },
+      schedule: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["day", "morning", "afternoon", "evening", "tip"],
+          properties: {
+            day: { type: "string" },
+            morning: { type: "string" },
+            afternoon: { type: "string" },
+            evening: { type: "string" },
+            tip: { type: "string" },
+          },
+        },
+      },
+      highlights: { type: "array", items: { type: "string" } },
+      included: { type: "array", items: { type: "string" } },
+      excluded: { type: "array", items: { type: "string" } },
+      targetDesc: { type: "string" },
+      estimatedPrice: { type: "string" },
+      instagram: { type: "string" },
+      blog: { type: "string" },
+      kakao: { type: "string" },
+    },
+  },
+};
+
 function planPrompt({ form, spots, dayCount }) {
-  const schedule = Array.from({ length: dayCount }, (_, index) =>
-    `{"day":"Day ${index + 1}","morning":"구체적 오전 일정","afternoon":"구체적 오후 일정","evening":"구체적 저녁 일정","tip":"실무 운영 팁"}`,
-  ).join(",");
-  return `다음 JSON 형식만 반환하세요. 다른 설명이나 마크다운은 쓰지 마세요.
+  return `관광상품 기획 전문가로서 아래 조건을 바탕으로 TourPlanit에 바로 표시할 여행상품 초안을 작성하세요.
 조건: 지역=${form.region}, 기간=${form.duration}, 테마=${form.theme}, 타깃=${form.target}, 예산=${form.budget || "중간"}, 운영조건=${form.special || "없음"}, 관광지=${spots}
-규칙: 일정은 정확히 ${dayCount}일, 각 일정 칸은 한 문장으로 간결하게 작성할 것. 확인되지 않은 가격·영업시간·예약 가능 여부를 사실처럼 단정하지 말 것. 모든 문자열은 한 줄.
-{"productName":"상품명","slogan":"슬로건","concept":"컨셉 설명","schedule":[${schedule}],"highlights":["핵심 1","핵심 2","핵심 3"],"included":["포함 1","포함 2","포함 3","포함 4"],"excluded":["불포함 1","불포함 2","불포함 3"],"targetDesc":"타깃 설명","estimatedPrice":"1인 예상 가격대","instagram":"인스타 문구","blog":"블로그 소개","kakao":"카카오 홍보 문구"}`;
+규칙: 일정은 정확히 ${dayCount}일, 각 일정 칸은 한 문장으로 간결하게 작성할 것. 확인되지 않은 가격·영업시간·예약 가능 여부를 사실처럼 단정하지 말 것. 모든 문자열은 한 줄. 제출 도구로 완성된 초안을 반환하세요.`;
+}
+
+function oneLine(value) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function toStringList(value) {
+  return Array.isArray(value) ? value.map(oneLine).filter(Boolean) : [];
+}
+
+function normalizePlan(raw, dayCount) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const schedule = Array.isArray(raw.schedule)
+    ? raw.schedule.slice(0, dayCount).map((item, index) => ({
+        day: oneLine(item?.day) || `Day ${index + 1}`,
+        morning: oneLine(item?.morning),
+        afternoon: oneLine(item?.afternoon),
+        evening: oneLine(item?.evening),
+        tip: oneLine(item?.tip),
+      }))
+    : [];
+
+  if (schedule.length !== dayCount || schedule.some((item) => !item.morning || !item.afternoon || !item.evening)) {
+    return null;
+  }
+
+  return {
+    productName: oneLine(raw.productName) || "AI 여행상품 초안",
+    slogan: oneLine(raw.slogan),
+    concept: oneLine(raw.concept),
+    schedule,
+    highlights: toStringList(raw.highlights),
+    included: toStringList(raw.included),
+    excluded: toStringList(raw.excluded),
+    targetDesc: oneLine(raw.targetDesc),
+    estimatedPrice: oneLine(raw.estimatedPrice),
+    instagram: oneLine(raw.instagram),
+    blog: oneLine(raw.blog),
+    kakao: oneLine(raw.kakao),
+  };
 }
 
 function blogPrompt(plan) {
@@ -30,19 +117,27 @@ exports.handler = async (event) => {
   if (!apiKey) return json(503, { error: "AI 초안 기능이 아직 설정되지 않았습니다. 관리자에게 ANTHROPIC_API_KEY 설정을 요청하세요." });
   try {
     const payload = JSON.parse(event.body || "{}");
-    const prompt = payload.kind === "blog" ? blogPrompt(payload.plan || {}) : planPrompt(payload);
+    const dayCount = Math.min(5, Math.max(1, Number(payload.dayCount) || 1));
+    const prompt = payload.kind === "blog"
+      ? blogPrompt(payload.plan || {})
+      : planPrompt({ ...payload, dayCount });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
     let response;
     try {
+      const aiRequest = {
+        model: AI_MODEL,
+        max_tokens: payload.kind === "blog" ? 1600 : 1800,
+        messages: [{ role: "user", content: prompt }],
+      };
+      if (payload.kind !== "blog") {
+        aiRequest.tools = [PLAN_TOOL];
+        aiRequest.tool_choice = { type: "tool", name: PLAN_TOOL.name };
+      }
       response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          max_tokens: payload.kind === "blog" ? 1600 : 1400,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        body: JSON.stringify(aiRequest),
         signal: controller.signal,
       });
     } finally {
@@ -50,17 +145,18 @@ exports.handler = async (event) => {
     }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) return json(response.status, { error: data?.error?.message || "AI API 요청에 실패했습니다." });
-    const text = data?.content?.[0]?.text?.trim() || "";
-    if (payload.kind === "blog") return json(200, { text });
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start < 0 || end < start) return json(422, { error: "AI 응답 형식을 읽지 못했습니다. 다시 시도하세요." });
-    try {
-      return json(200, { plan: JSON.parse(text.slice(start, end + 1)) });
-    } catch (error) {
-      console.error("[ai-draft] invalid plan JSON", error?.message || "unknown parse error");
-      return json(422, { error: "AI 초안 형식이 올바르지 않아 다시 생성이 필요합니다. 다시 시도해주세요." });
+    if (payload.kind === "blog") {
+      const text = data?.content?.[0]?.text?.trim() || "";
+      return json(200, { text });
     }
+
+    const toolUse = data?.content?.find((block) => block.type === "tool_use" && block.name === PLAN_TOOL.name);
+    const plan = normalizePlan(toolUse?.input, dayCount);
+    if (!plan) {
+      console.error("[ai-draft] invalid structured plan response");
+      return json(422, { error: "AI가 완성된 초안을 반환하지 못했습니다. 잠시 후 다시 시도해주세요." });
+    }
+    return json(200, { plan });
   } catch (error) {
     if (error?.name === "AbortError") {
       return json(504, { error: "AI 응답 시간이 길어 초안 생성을 중단했습니다. 잠시 후 다시 시도해주세요." });
