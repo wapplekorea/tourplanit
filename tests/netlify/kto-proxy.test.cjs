@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { handler } = require("./kto-proxy.js");
+const { handler } = require("../../netlify/functions/kto-proxy.js");
 
 const event = {
   httpMethod: "GET",

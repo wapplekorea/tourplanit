@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { _test } = require("./ai-draft.js");
+const { _test } = require("../../netlify/functions/ai-draft.js");
 
 test("normalizes missing and UNKNOWN promotion fields with useful copy", () => {
   const plan = _test.normalizePlan({
@@ -35,7 +35,7 @@ test("does not disguise an upstream API authentication failure as fallback succe
     json: async () => ({ error: { message: "invalid x-api-key" } }),
   });
   try {
-    const response = await require("./ai-draft.js").handler({
+    const response = await require("../../netlify/functions/ai-draft.js").handler({
       httpMethod: "POST",
       body: JSON.stringify({ kind: "plan", dayCount: 1, form: { region: "제주" }, spots: "성산일출봉" }),
     });
