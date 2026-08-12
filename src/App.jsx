@@ -53,6 +53,37 @@ async function requestAiDraft(kind, payload) {
   if (!res.ok) throw new Error(data?.error || "AI 초안을 만들지 못했습니다.");
   return data;
 }
+function safeText(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const cleaned = value.replace(/<UNKNOWN>|\bUNKNOWN\b|null|undefined/gi, " ").replace(/\s+/g, " ").trim();
+  return cleaned && cleaned !== "-" ? cleaned : fallback;
+}
+function promotionFallback(plan, channel) {
+  const region = safeText(plan.region, "선택 지역");
+  const duration = safeText(plan.duration, "선택 일정");
+  const theme = safeText(plan.theme, "맞춤 여행");
+  const copy = {
+    instagram: `${region}에서 만나는 ${theme} 여행. ${duration} 일정의 핵심을 담았습니다. 상세 조건은 문의 후 확인해 주세요. #${region}여행 #여행상품`,
+    blog: `${region} ${theme} 여행을 준비하는 고객을 위한 ${duration} 상품 초안입니다. 일정과 포함 조건은 담당자 검토 후 확정됩니다.`,
+    kakao: `${region} ${duration} ${theme} 여행을 소개합니다. 일정·가격·예약 가능 여부는 상담 시 확인해 주세요.`,
+  };
+  return copy[channel];
+}
+function normalizePlanForView(plan = {}) {
+  const normalized = { ...plan };
+  normalized.productName = safeText(plan.productName, `${safeText(plan.region,"선택 지역")} 여행상품 초안`);
+  normalized.slogan = safeText(plan.slogan, promotionFallback(plan, "kakao"));
+  normalized.concept = safeText(plan.concept, `${safeText(plan.region,"선택 지역")} 여행의 운영 조건과 동선을 검토하는 상품 초안입니다.`);
+  normalized.estimatedPrice = safeText(plan.estimatedPrice, "요청 조건에 따라 별도 산정");
+  normalized.highlights = (Array.isArray(plan.highlights) ? plan.highlights : []).map((v) => safeText(v, "")).filter(Boolean);
+  normalized.included = (Array.isArray(plan.included) ? plan.included : []).map((v) => safeText(v, "")).filter(Boolean);
+  normalized.excluded = (Array.isArray(plan.excluded) ? plan.excluded : []).map((v) => safeText(v, "")).filter(Boolean);
+  normalized.targetDesc = safeText(plan.targetDesc, `${safeText(plan.target,"여행 고객")}을 위한 검토용 상품 초안입니다.`);
+  normalized.instagram = safeText(plan.instagram, promotionFallback(plan, "instagram"));
+  normalized.blog = safeText(plan.blog, promotionFallback(plan, "blog"));
+  normalized.kakao = safeText(plan.kakao, promotionFallback(plan, "kakao"));
+  return normalized;
+}
 function getShareUrl(plan) {
   const encoded = encodePlan(plan);
   return `${window.location.origin}/?share=${encoded}`;
@@ -328,11 +359,11 @@ function CardNews({plan}) {
   const cl = SLIDE_COLORS[slide%SLIDE_COLORS.length];
 
   return (
-    <Card>
+    <Card style={{padding:"clamp(16px, 3vw, 28px)"}}>
       <SectionTitle>카드뉴스 초안</SectionTitle>
-      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>상품의 핵심 메시지를 슬라이드 단위로 검토하는 홍보 초안입니다. 게시 전 문구와 가격·일정 조건을 확인하세요.</p>
-      <div style={{position:"relative",userSelect:"none"}}>
-        <div style={{background:cl.bg,borderRadius:20,overflow:"hidden",position:"relative",minHeight:400,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center",padding:"48px 40px"}}>
+      <p style={{fontSize:13,color:C.muted,lineHeight:1.7,margin:"-4px 0 18px"}}>인스타그램 피드 4:5(1080×1350) 기준의 홍보 초안입니다. 저장·공유 전 문구와 가격·일정 조건을 확인하세요.</p>
+      <div className="tourplanit-cardnews-workspace" style={{position:"relative",userSelect:"none"}}>
+        <div className="tourplanit-cardnews-frame" data-slide style={{background:cl.bg,overflow:"hidden",position:"relative",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",textAlign:"center",padding:"clamp(32px, 8vw, 72px) clamp(24px, 7vw, 64px)"}}>
           {/* 배경 이미지 (관광지 실제 사진) */}
           {s.img && <div style={{position:"absolute",inset:0,backgroundImage:`url(${s.img})`,backgroundSize:"cover",backgroundPosition:"center",opacity:0.18}}/>}
           {/* 장식 원 */}
@@ -389,22 +420,21 @@ function CardNews({plan}) {
           </div>
         </div>
 
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,padding:"0 4px"}}>
+        <div className="tourplanit-cardnews-controls" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16,padding:"0 4px",gap:12}}>
           <button onClick={()=>setSlide(Math.max(0,slide-1))} disabled={slide===0}
             style={btn({padding:"9px 18px",borderRadius:8,background:slide===0?"#eee":C.navy,color:slide===0?C.muted:"#fff",fontSize:13})}>← 이전</button>
-          <div style={{display:"flex",gap:6}}>
+          <div className="tourplanit-cardnews-dots" style={{display:"flex",gap:6}}>
             {slides.map((_,i)=>(
-              <div key={i} onClick={()=>setSlide(i)} style={{width:i===slide?20:8,height:8,borderRadius:4,background:i===slide?C.navy:"#ddd",cursor:"pointer",transition:"all .2s"}}/>
+              <button aria-label={`${i+1}번 슬라이드`} key={i} onClick={()=>setSlide(i)} style={btn({width:i===slide?20:8,height:8,padding:0,borderRadius:4,background:i===slide?C.navy:"#ddd",transition:"all .2s"})}/>
             ))}
           </div>
           <button onClick={()=>setSlide(Math.min(total-1,slide+1))} disabled={slide===total-1}
             style={btn({padding:"9px 18px",borderRadius:8,background:slide===total-1?"#eee":C.navy,color:slide===total-1?C.muted:"#fff",fontSize:13})}>다음 →</button>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
+        <div className="tourplanit-cardnews-actions" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
           <button onClick={()=>{
-            const el = document.querySelector('[data-slide]');
-      alert("슬라이드 저장은 브라우저의 화면 캡처 또는 이미지 저장 기능을 이용하세요.\n\n자동 이미지 다운로드는 별도 기능으로 준비합니다.");
+            alert("현재 미리보기는 인스타그램 피드 4:5 비율입니다.\n\n1080×1350 이미지 저장은 브라우저 화면 캡처를 이용하고, 게시 전 문구와 가격 조건을 확인하세요.");
           }} style={btn({padding:"11px",borderRadius:8,background:C.amber,color:"#fff",fontSize:13,fontWeight:600})}>현재 슬라이드 저장 안내</button>
           <button onClick={()=>{
             const url = getShareUrl(plan);
@@ -428,7 +458,7 @@ function BlogContent({plan}) {
     setLoading(true);
     try {
       const data = await requestAiDraft("blog", { plan });
-      setBlog(data.text);
+      setBlog(safeText(data.text, promotionFallback(plan, "blog")));
     } catch(e) { alert("오류: "+e.message); }
     finally { setLoading(false); }
   };
@@ -468,21 +498,21 @@ function BlogContent({plan}) {
 // ── 카카오 ──
 function KakaoMessage({plan}) {
   const [copied, setCopied] = useState(false);
-  const msg = `[${plan.productName}]
-${plan.slogan}
+  const msg = `[${safeText(plan.productName, `${safeText(plan.region,"여행지")} 여행상품`)}]
+${safeText(plan.slogan, promotionFallback(plan, "kakao"))}
 
 📍 지역: ${plan.region}
 🗓 기간: ${plan.duration}
 🎯 테마: ${plan.theme}
-💰 예상가격: ${plan.estimatedPrice}
+💰 참고 예산: ${safeText(plan.estimatedPrice,"상담 후 안내")}
 
 ✅ 포함
-${plan.included?.slice(0,3).map(v=>`• ${v}`).join("\n")}
+${(Array.isArray(plan.included)?plan.included:[]).slice(0,3).map(v=>`• ${safeText(v,"포함 조건 확인 필요")}`).join("\n") || "• 포함 조건 확인 필요"}
 
 ❌ 불포함
-${plan.excluded?.slice(0,2).map(v=>`• ${v}`).join("\n")}
+${(Array.isArray(plan.excluded)?plan.excluded:[]).slice(0,2).map(v=>`• ${safeText(v,"불포함 조건 확인 필요")}`).join("\n") || "• 불포함 조건 확인 필요"}
 
-🌟 ${plan.highlights?.[0]}
+🌟 ${safeText(plan.highlights?.[0], promotionFallback(plan, "kakao"))}
 
 문의/예약 👇
 📞 연락처를 입력해주세요
@@ -539,7 +569,7 @@ ${plan.excluded?.slice(0,2).map(v=>`• ${v}`).join("\n")}
 // ── 기획서 상세 ──
 function PlanDetail({plan:initialPlan, onBack, onDelete}) {
   const [tab, setTab] = useState("overview");
-  const [plan, setPlan] = useState(initialPlan);
+  const [plan, setPlan] = useState(() => normalizePlanForView(initialPlan));
   const [editingField, setEditingField] = useState(null);
 
   const updateField = (field, value) => {
@@ -628,6 +658,12 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
         ))}
       </div>
 
+      {plan.aiGeneration?.status === "fallback" && (
+        <div role="status" style={{background:"#fff7e6",border:"1px solid #f4d08b",borderRadius:12,padding:"13px 16px",marginBottom:16,color:"#7a5200",fontSize:13,lineHeight:1.65}}>
+          <strong>AI 응답 형식 복구됨</strong> · {safeText(plan.aiGeneration.warning,"AI 응답 형식을 읽지 못해 입력 조건 기반의 검토용 초안을 표시합니다.")} 실제 AI 생성 완료로 간주하지 말고 내용을 확인하세요.
+        </div>
+      )}
+
       {tab==="overview" && (
         <>
           <div style={{background:"#fffaf0",border:"1px solid #f3d995",borderRadius:12,padding:"14px 16px",marginBottom:16}}>
@@ -671,15 +707,17 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
           </Card>
           <Card>
             <SectionTitle>홍보 문구</SectionTitle>
-            {[{key:"instagram",label:"인스타그램",color:"#c13584"},{key:"blog",label:"블로그",color:"#e85d30"},{key:"kakao",label:"카카오",color:"#b57a00"}].map(({key,label,color})=>(
+            {[{key:"instagram",label:"인스타그램",color:"#c13584"},{key:"blog",label:"블로그",color:"#e85d30"},{key:"kakao",label:"카카오",color:"#b57a00"}].map(({key,label,color})=>{
+              const copy = safeText(plan[key], promotionFallback(plan, key));
+              return (
               <div key={key} style={{background:C.gray,borderRadius:8,padding:16,marginBottom:12}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <span style={{fontSize:13,fontWeight:700,color}}>{label}</span>
-                  <button onClick={()=>{navigator.clipboard.writeText(plan[key]||"");alert("복사!");}} style={btn({fontSize:11,color:C.light,border:"1px solid #ddd",borderRadius:4,padding:"3px 10px",background:"#fff"})}>복사</button>
+                  <button onClick={()=>{navigator.clipboard.writeText(copy);alert("복사했습니다.");}} style={btn({fontSize:11,color:C.light,border:"1px solid #ddd",borderRadius:4,padding:"3px 10px",background:"#fff"})}>복사</button>
                 </div>
-                <p style={{fontSize:13,color:C.text,lineHeight:1.7,margin:0}}>{plan[key]||"—"}</p>
+                <p style={{fontSize:13,color:C.text,lineHeight:1.7,margin:0}}>{copy}</p>
               </div>
-            ))}
+            )})}
           </Card>
           <div style={{background:C.navy,borderRadius:14,padding:24,textAlign:"center",color:"#fff",marginBottom:16}}>
             <div style={{fontSize:11,color:"#b9d9f5",marginBottom:6,fontWeight:700,letterSpacing:0.7}}>참고 예산 범위</div>
@@ -704,8 +742,13 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
                 </div>
                 {plan.ktoSource === "kto" && plan.ktoMeta && (
                   <div style={{fontSize:10,color:"#6b88a7",marginBottom:8,lineHeight:1.5}}>
-                    출처: {plan.ktoMeta.provider} 관광정보 OpenAPI · {plan.ktoMeta.api} · 지역 코드 {plan.ktoMeta.areaCode}
+                    출처: {plan.ktoMeta.provider} · {plan.ktoMeta.api} · 지역 코드 {plan.ktoMeta.areaCode}
                     {plan.ktoMeta.collectedAt ? ` · 조회 ${new Date(plan.ktoMeta.collectedAt).toLocaleString("ko-KR")}` : ""}
+                  </div>
+                )}
+                {plan.ktoSource === "kto" && plan.ktoMeta?.fields && (
+                  <div style={{fontSize:10,color:"#6b88a7",marginBottom:8,lineHeight:1.6}}>
+                    활용 데이터: {plan.ktoMeta.fields.join(", ")}<br/>활용 위치: {plan.ktoMeta.usedFor || "AI 상품 기획 초안의 지역 관광지 후보"}
                   </div>
                 )}
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
@@ -716,7 +759,11 @@ function PlanDetail({plan:initialPlan, onBack, onDelete}) {
                 </div>
               </>
             ) : (
-              <div style={{fontSize:12,color:"#5580a8"}}>{plan.region} 지역 기본 데이터 적용 · 관광공사 데이터 재확인 필요</div>
+              <div>
+                <div style={{fontSize:12,color:"#5580a8",marginBottom:4}}>{plan.region} 지역 기본 데이터 적용 · 관광공사 데이터 재확인 필요</div>
+                <div style={{fontSize:11,color:"#6b7684",lineHeight:1.55}}>실시간 API 조회가 성공하지 않아 한국관광공사 출처로 표시하지 않습니다. 새 기획서에서 다시 생성해 재시도할 수 있습니다.</div>
+                {plan.ktoError && <div role="status" style={{fontSize:10,color:"#8a5a00",marginTop:6}}>조회 상태: {safeText(plan.ktoError,"관광공사 데이터 조회 실패")}</div>}
+              </div>
             )}
           </div>
           <p style={{textAlign:"center",fontSize:11,color:C.light}}>관광 데이터는 참고 근거이며, 운영 가능 여부와 최신 정보는 담당자가 확인합니다.</p>
@@ -777,9 +824,9 @@ export default function App() {
       const res = await fetch(
         `${FUNCTION_BASE}/kto-proxy?areaCode=${areaCode}&contentTypeId=12&numOfRows=20`
       );
-      if (!res.ok) throw new Error("proxy error");
-      const data = await res.json();
-      if (data.spots && data.spots.length > 0) {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `관광공사 조회 실패 (${res.status})`);
+      if (data.source && Array.isArray(data.spots) && data.spots.length > 0) {
         return {
           spotsStr: data.spots.map((s) => s.title).join(", "),
           spotsArray: data.spots,
@@ -787,11 +834,11 @@ export default function App() {
           meta: data.source || null,
         };
       }
-      throw new Error("no spots");
-    } catch {
+      throw new Error("선택한 조건의 관광지 결과가 없습니다.");
+    } catch (error) {
       // KTO API 실패 시 폴백
       const fallback = fallbackMap[form.region] || `${form.region} 주요 관광지, 전통시장, 역사문화유적, 자연경관, 맛집거리`;
-      return { spotsStr: fallback, spotsArray: [], source: "fallback", meta: null };
+      return { spotsStr: fallback, spotsArray: [], source: "fallback", meta: null, error: error?.message || "관광공사 데이터를 조회하지 못했습니다." };
     }
   };
 
@@ -799,13 +846,15 @@ export default function App() {
     setLoading(true);
     try {
       setLoadingMsg("관광공사 데이터 수집 중...");
-      const { spotsStr, spotsArray, source, meta } = await fetchSpots();
+      const { spotsStr, spotsArray, source, meta, error: ktoError } = await fetchSpots();
       setLoadingMsg("AI 기획서 생성 중...");
       const dayCount = form.duration==="당일치기"?1:form.duration==="1박 2일"?2:form.duration==="2박 3일"?3:4;
       const data = await requestAiDraft("plan", { form, spots: spotsStr, dayCount });
       const plan = data.plan;
       plan.region=form.region; plan.duration=form.duration; plan.theme=form.theme; plan.target=form.target;
       plan.ktoSpots=spotsArray; plan.ktoSource=source; plan.ktoMeta=meta;
+      plan.ktoError=source==="fallback" ? ktoError : null;
+      plan.aiGeneration=data.generation||{status:"ai"};
       const saved = saveToHistory(plan);
       refresh(); setDetailItem(saved); setPage("detail");
     } catch(e) { alert("오류: "+e.message+"\n다시 시도해주세요."); }
@@ -907,7 +956,7 @@ export default function App() {
 
           <div style={{background:C.white,borderTop:"1px solid #e9edf2",borderBottom:"1px solid #e9edf2",padding:"28px 20px"}}>
             <div style={{maxWidth:880,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:20}}>
-              <div><div style={{fontSize:11,color:C.muted,fontWeight:750,letterSpacing:1,marginBottom:8}}>DATA BASIS</div><div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:5}}>관광 데이터로 시작합니다</div><div style={{fontSize:12,color:C.muted,lineHeight:1.65}}>한국관광공사 관광정보를 출발점으로 활용합니다. 결과는 기획 목적에 맞는지 검토가 필요합니다.</div></div>
+              <div><div style={{fontSize:11,color:C.muted,fontWeight:750,letterSpacing:1,marginBottom:8}}>DATA BASIS</div><div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:5}}>관광 데이터 연결을 먼저 확인합니다</div><div style={{fontSize:12,color:C.muted,lineHeight:1.65}}>한국관광공사 API 조회가 실제 성공한 경우에만 관광지명·주소 등 조회 항목을 초안 후보로 활용합니다. 실패 시 기본 초안임을 결과에 표시합니다.</div></div>
               <div><div style={{fontSize:11,color:C.muted,fontWeight:750,letterSpacing:1,marginBottom:8}}>AI DRAFT</div><div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:5}}>AI는 초안을 만들고, 사람은 결정합니다</div><div style={{fontSize:12,color:C.muted,lineHeight:1.65}}>자동 생성 결과는 바로 발행되지 않습니다. 필요한 부분을 편집한 뒤 저장·공유하세요.</div></div>
             </div>
           </div>

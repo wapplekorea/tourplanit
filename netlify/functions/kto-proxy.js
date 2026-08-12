@@ -38,7 +38,7 @@ exports.handler = async (event) => {
       ...(contentTypeId && { contentTypeId }),
     });
 
-    const url = `https://apis.data.go.kr/B551011/KorService1/areaBasedList1?${params}`;
+    const url = `https://apis.data.go.kr/B551011/KorService2/areaBasedList2?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -46,6 +46,10 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
+    const resultCode = data?.response?.header?.resultCode;
+    if (resultCode && resultCode !== "0000") {
+      throw new Error(`KTO API result ${resultCode}`);
+    }
     const items = data?.response?.body?.items?.item || [];
 
     const spots = Array.isArray(items)
@@ -67,13 +71,15 @@ exports.handler = async (event) => {
       // 데이터 출처만 안전한 메타데이터로 돌려준다.
       body: JSON.stringify({
         spots,
-        source: {
+        source: spots.length ? {
           provider: "한국관광공사",
-          api: "KorService1 / areaBasedList1",
+          api: "관광정보 OpenAPI KorService2 / areaBasedList2",
+          fields: ["관광지명(title)", "주소(addr1)", "대표 이미지(firstimage/firstimage2)", "콘텐츠 ID(contentid)", "관광 타입(contenttypeid)"],
+          usedFor: "AI 상품 기획 초안의 지역 관광지 후보",
           areaCode,
           contentTypeId,
           collectedAt: new Date().toISOString(),
-        },
+        } : null,
       }),
     };
   } catch (error) {
