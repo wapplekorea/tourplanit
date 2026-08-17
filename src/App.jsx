@@ -86,7 +86,9 @@ function normalizePlanForView(plan = {}) {
 }
 function getShareUrl(plan) {
   const encoded = encodePlan(plan);
-  return `${window.location.origin}/?share=${encoded}`;
+  // Keep the payload in the fragment so large plans are not sent as an HTTP
+  // query string and rejected by the host with 414 URI Too Long.
+  return `${window.location.origin}/#share=${encoded}`;
 }
 function getPlanChecks(plan) {
   const checks = [];
@@ -790,7 +792,8 @@ export default function App() {
   // URL 파라미터로 공유된 기획서 처리
   useEffect(()=>{
     const params = new URLSearchParams(window.location.search);
-    const shareId = params.get("share");
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const shareId = params.get("share") || hashParams.get("share");
     const planStr = params.get("plan"); // 구버전 호환
     if (shareId) {
       const plan = decodePlan(shareId);
